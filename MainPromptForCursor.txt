@@ -1,0 +1,377 @@
+You are an expert full-stack engineer working inside Cursor. 
+Your job is to build a complete MVP from scratch using: 
+- Next.js (App Router, TypeScript)
+- Capacitor (for Android/iOS builds)
+- Firebase (Auth + Firestore, with clear extension points for Functions later)
+- Tailwind CSS for UI
+- Zod + React Hook Form (or similar) for validation
+
+The app is called **CommuteDrop** (temporary name for now; design so it’s easy to rename later).
+
+==================================================
+HIGH-LEVEL PRODUCT DESCRIPTION
+==================================================
+
+CommuteDrop is a simple peer-to-peer “deliver on the way” app:
+
+- **Senders** create “delivery requests” (pickup → dropoff).
+- **Commuters** (regular users traveling anyway) can see open requests near them and accept one.
+- OTP-based confirmation at pickup and at drop.
+- No chat for MVP.
+- All data is stored in Firebase Firestore.
+- Authentication is via Firebase Phone Auth for real users (but we should also allow a “dev mode” email/password login to simplify local testing).
+
+The MVP should be optimized for **mobile-first web** (PWA style) and packaged with **Capacitor** for Android + iOS.
+
+==================================================
+TECH STACK & PROJECT SETUP
+==================================================
+
+1. **Core tech**
+   - Next.js 14+ with App Router
+   - TypeScript
+   - Tailwind CSS
+   - Capacitor (for wrapping the Next.js app into mobile)
+   - Firebase Web SDK:
+     - Authentication
+     - Firestore
+   - Form + validation:
+     - React Hook Form
+     - Zod for schema validation
+
+2. **Project initialization**
+   - Initialize a new Next.js project with TypeScript and App Router.
+   - Add Tailwind CSS and configure it properly.
+   - Add ESLint + Prettier with sane defaults (no overly strict rules that block dev).
+   - Setup a clean `src/` folder structure, for example:
+     - `src/app` (Next.js routes)
+     - `src/components/ui` (reusable UI components)
+     - `src/components/forms`
+     - `src/lib/firebase`
+     - `src/lib/validation`
+     - `src/lib/types`
+     - `src/hooks` (custom hooks if needed)
+   - Add a top-level `README.md` with detailed instructions (see section “README REQUIREMENTS”).
+
+3. **Environment configuration**
+   - Use **Next.js public env variables** for Firebase config:
+     - `NEXT_PUBLIC_FIREBASE_API_KEY`
+     - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+     - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+     - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+     - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+     - `NEXT_PUBLIC_FIREBASE_APP_ID`
+   - Provide a `.env.example` file with these keys (placeholder values).
+
+4. **Firebase setup (code)**
+   - Create a `src/lib/firebase/client.ts` that:
+     - Initializes Firebase app (singleton pattern).
+     - Exports `auth` and `db` (Firestore) instances.
+   - Wrap initialization with checks to avoid re-initializing in dev/hot reload.
+
+==================================================
+DATA MODEL (FIRESTORE)
+==================================================
+
+Use Firestore **in a simple, normalized way**.
+
+1. `users` collection
+   - Document ID: Firebase Auth `uid`.
+   - Fields:
+     - `phone: string | null`        // phone number if using phone auth
+     - `email: string | null`        // optional, for dev/testing
+     - `name: string`                // display name
+     - `role: "sender" | "commuter" | "both"`
+     - `createdAt: Timestamp`
+     - `updatedAt: Timestamp`
+
+2. `requests` collection
+   - Represents a single delivery job created by a sender.
+   - Fields:
+     - `senderId: string`            // uid of sender
+     - `commuterId: string | null`   // uid of commuter, null when open
+     - `pickupPincode: string`
+     - `pickupDetails: string`       // free-text details (landmark, floor, etc.)
+     - `dropPincode: string`
+     - `dropDetails: string`
+     - `itemDescription: string`     // short description
+     - `priceOffered: number | null` // optional, e.g., SGD 5
+     - `status: "open" | "accepted" | "picked" | "delivered" | "cancelled"`
+     - `otpPickup: number`           // 4-digit code
+     - `otpDrop: number`             // 4-digit code
+     - `createdAt: Timestamp`
+     - `updatedAt: Timestamp`
+
+For MVP, OTPs can be generated on the client side with a helper function, but structure the code so later OTP can be moved to Firebase Functions.
+
+==================================================
+AUTHENTICATION REQUIREMENTS
+==================================================
+
+1. Support two modes (configurable via env or a simple toggle in the code):
+   - **Phone Auth mode** (intended production mode using Firebase Phone Auth).
+   - **Email/Password dev mode** (for testing without phone numbers).
+
+2. Build an **Auth page** with:
+   - Tabs or toggle: “Phone Login” / “Email Login (Dev)”.
+   - For Phone mode:
+     - Input: country code + phone number (for MVP assume “+65” default, but allow manual change as text).
+     - Button to “Send OTP”.
+     - Handle Firebase Recaptcha (web flow).
+     - Input for OTP code and “Verify & Continue”.
+   - For Email mode:
+     - Email + Password login & simple signup.
+   - On successful authentication:
+     - Create/update user document in `users` collection.
+     - Redirect to main “Home” (dashboard) screen.
+
+3. Protect routes:
+   - Implement a basic auth context / hook (e.g. `useAuth`) that:
+     - Listens to Firebase Auth state.
+     - Exposes `user`, `loading`, `signOut` etc.
+   - Use this to protect pages like:
+     - `/app` (main dashboard)
+     - `/requests/create`
+     - `/requests/[id]`
+     - etc.
+   - Unauthenticated users get redirected to `/auth`.
+
+==================================================
+APP FLOW & PAGES (UX)
+==================================================
+
+APP ROUTING (Next.js App Router under `/app` folder):
+
+- `/` → Landing page (simple description + “Get Started” button → `/auth`).
+- `/auth` → Authentication page (phone + email/dev).
+- `/app` → Main dashboard:
+  - Tabs or segmented controls for:
+    - “My Requests” (requests I created as sender)
+    - “Available Requests” (open requests I can take as commuter)
+  - Top-level navigation bar (or bottom nav for mobile feel).
+
+- `/requests/create` → Create new request.
+- `/requests/[id]` → Request detail:
+  - Shows status, sender info, commuter info (if any), pickup/drop details.
+  - Actions depending on role & status:
+    - If I’m a commuter and status = `open`: show “Accept Request”.
+    - If I’m the assigned commuter and status = `accepted`: show “Mark picked up (OTP)”.
+    - If I’m the assigned commuter and status = `picked`: show “Mark delivered (OTP)”.
+    - If I’m the sender: show OTPs (or a way to reveal or send them to the commuter).
+
+MAKE THE UI MOBILE-FIRST:
+- Use responsive Tailwind classes.
+- Use a simple card-based layout.
+- Use clear labels, minimal text, big buttons.
+
+==================================================
+DETAILED SCREEN REQUIREMENTS
+==================================================
+
+1. Landing page (`/`)
+   - Simple hero:
+     - App name: “CommuteDrop”
+     - Subtitle: “Deliver on the way. Send or carry items along your commute.”
+     - One CTA: “Get started →” that links to `/auth`.
+
+2. Auth page (`/auth`)
+   - Card in center for login.
+   - Segmented control for “Phone Login” vs “Email (Dev)”.
+   - Phone Login flow:
+     - Input for phone number with validation.
+     - Button “Send OTP” (disabled while sending).
+     - After sending, show OTP input (6 digits).
+     - Button “Verify & Continue”.
+     - Show loading and error messages clearly.
+   - Email Login flow:
+     - Tabs or toggle: “Login” / “Register”.
+     - Email & password fields with validation.
+     - Show error messages (invalid email, too short password, etc.).
+   - On success, redirect to `/app`.
+
+3. Dashboard (`/app`)
+   - Top header with:
+     - App logo/name.
+     - “Logout” button.
+   - Two tabs:
+     - Tab 1: “My Requests”
+       - List of requests where `senderId === currentUser.uid`.
+       - Each list item shows:
+         - Status badge.
+         - Pickup → Drop pincode.
+         - Created date.
+     - Tab 2: “Available Requests”
+       - List of `requests` with `status === "open"` and `senderId !== currentUser.uid`.
+       - Optional simple filter by pickup pincode (search input).
+       - Each item shows:
+         - Key fields and a “View” or “Accept” button.
+   - Floating action button or prominent button: “+ New Request” → `/requests/create`.
+
+4. Create Request (`/requests/create`)
+   - Use React Hook Form + Zod:
+     - Fields:
+       - Pickup pincode (required, numeric, length 5–6)
+       - Pickup details (required, min length e.g. 5)
+       - Drop pincode (required, numeric)
+       - Drop details (required)
+       - Item description (required)
+       - Optional: Price offered (number, positive)
+   - On submit:
+     - Generate `otpPickup` and `otpDrop` on client as 4-digit random numbers.
+     - Save to Firestore.
+     - Redirect to `/requests/[id]` or back to dashboard with success message.
+
+5. Request Detail (`/requests/[id]`)
+   - Show:
+     - Status badge (with colors for each status).
+     - Pickup details + pincode.
+     - Drop details + pincode.
+     - Item description.
+     - Price offered (if any).
+     - Sender info: show basic info like “Posted by You” or “Posted by {name}”.
+     - Commuter info if `commuterId` filled.
+   - If user is **commuter** and request is `open`:
+     - Show “Accept this Request” button.
+     - Confirm with a modal.
+   - After acceptance:
+     - Status → `accepted`.
+   - OTP flows:
+     - For simplicity:
+       - Only commuter inputs OTP in app.
+       - Sender can see both OTPs on the detail screen (maybe behind a “Show OTP” toggle).
+     - If commuter and status = `accepted`:
+       - Show input for `Pickup OTP`.
+       - On correct OTP: status → `picked`.
+     - If commuter and status = `picked`:
+       - Show input for `Drop OTP`.
+       - On correct OTP: status → `delivered`.
+
+==================================================
+VALIDATION & UX RULES
+==================================================
+
+1. Use Zod schemas for:
+   - Auth forms (email + password).
+   - Request creation.
+   - OTP inputs.
+
+2. Show validation errors inline near the fields, and prevent submit until valid.
+
+3. Use loading states and disabled buttons whenever a network request is in progress:
+   - Logging in
+   - Creating request
+   - Accepting request
+   - Verifying OTP
+
+4. Handle and surface Firestore and Firebase errors with toast notifications or inline messages:
+   - E.g. “Failed to create request. Please try again.”
+   - “Invalid OTP. Please check and try again.”
+
+5. Use a simple global notification/toast system (can be something lightweight or even a simple custom component).
+
+==================================================
+FIREBASE SECURITY (HIGH LEVEL)
+==================================================
+
+Although the actual Firestore rules will be configured in the console, structure the code assuming rules like:
+
+- `users/{uid}`: Only owner can read/write.
+- `requests/{id}`:
+  - Anyone authenticated can read.
+  - Only authenticated users can create.
+  - Updates:
+    - Sender can update their own requests.
+    - Assigned commuter can update status.
+
+You don’t need to write the rules JSON in this codebase, but document a suggested ruleset in the README.
+
+==================================================
+CAPACITOR INTEGRATION REQUIREMENTS
+==================================================
+
+1. Add Capacitor to the project:
+   - Configure it so that:
+     - Web app is built by Next.js.
+     - Capacitor serves the built Next.js app for Android & iOS.
+
+2. Include:
+   - Basic instructions in README:
+     - How to install Capacitor.
+     - How to run `npx cap add android` and `npx cap add ios`.
+     - How to sync (`npx cap sync`) after changes.
+     - How to open Android Studio/Xcode for building.
+
+3. For MVP, no native plugins are required beyond what Capacitor uses by default.
+
+==================================================
+README REQUIREMENTS
+==================================================
+
+Generate a comprehensive `README.md` that includes:
+
+1. **Project description**
+   - What is CommuteDrop?
+   - High-level features.
+
+2. **Tech stack**
+   - Next.js, TypeScript, Tailwind, Firebase, Capacitor, etc.
+
+3. **Setup instructions**
+   - Prerequisites (Node, pnpm/yarn/npm, Firebase project).
+   - How to create a Firebase project & Web app.
+   - How to obtain Firebase config and put it into `.env.local`.
+   - How to enable Authentication (phone + email/password) in Firebase console.
+   - How to create Firestore and set basic rules (describe suggested rules).
+
+4. **Running locally**
+   - `npm install` or `pnpm install`.
+   - `npm run dev` for development.
+   - How to access the app in the browser.
+
+5. **Building for web**
+   - `npm run build` and `npm run start`.
+
+6. **Capacitor usage**
+   - Steps to add platforms.
+   - How to run on Android emulator/device.
+   - How to run on iOS simulator/device (if on macOS).
+
+7. **Future improvements section**
+   - Suggestions such as:
+     - Move OTP generation to Firebase Functions.
+     - Add push notifications (FCM).
+     - Add geolocation and map-based nearby matching.
+     - Add payments integration.
+
+==================================================
+CODE QUALITY & ORGANIZATION
+==================================================
+
+- Use TypeScript types and interfaces where appropriate.
+- Use React Server Components / Client Components appropriately under the App Router model.
+- Keep components small, reusable, and grouped (e.g. `RequestCard`, `StatusBadge`, `FormField`, etc.).
+- Add comments where important decisions are made (e.g. OTP generation on client for now, but to be moved to backend later).
+- Make sure the app compiles and runs without TypeScript errors or ESLint blocking issues.
+
+==================================================
+YOUR TASK INSIDE CURSOR
+==================================================
+
+1. Initialize the full Next.js + Tailwind + TypeScript project.
+2. Add Firebase integration and config placeholders.
+3. Implement Authentication (Phone + Email/Password dev mode) with proper forms and flows.
+4. Implement all UI screens described above with good mobile-first UX and clear validation.
+5. Implement Firestore calls for:
+   - Creating requests.
+   - Listing “My Requests”.
+   - Listing “Available Requests”.
+   - Accepting a request.
+   - Updating status via OTP verification.
+6. Integrate Capacitor and provide minimal configuration + documentation.
+7. Finally, generate a complete `README.md` that documents all of this clearly.
+
+Please now:
+- Create all necessary files and folders.
+- Show me the final file tree.
+- Then show key files (Firebase init, main pages, forms, core components, and README).
+- Ensure the project is ready to run with `npm install` and `npm run dev` once `.env.local` is filled.

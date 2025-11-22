@@ -1,0 +1,348 @@
+# CommuteDrop
+
+**CommuteDrop** is a peer-to-peer "deliver on the way" mobile and web application. Senders create delivery requests, and commuters (regular users traveling anyway) can see open requests near them and accept one. The app uses OTP-based confirmation at pickup and drop points.
+
+## Features
+
+- 🔐 **Dual Authentication**: Phone authentication (production) and Email/Password (dev mode)
+- 📦 **Request Management**: Create, view, and manage delivery requests
+- 🚗 **Commuter Matching**: Browse and accept available delivery requests
+- 🔢 **OTP Verification**: Secure pickup and drop confirmation using 4-digit OTPs
+- 📱 **Mobile-First Design**: Optimized for mobile devices with PWA support
+- 📲 **Native Apps**: Built with Capacitor for Android and iOS deployment
+
+## Tech Stack
+
+- **Framework**: Next.js 14+ (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Backend**: Firebase
+  - Authentication (Phone + Email/Password)
+  - Firestore (Database)
+- **Form Management**: React Hook Form + Zod
+- **Mobile**: Capacitor
+- **Date Handling**: date-fns
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** (v18 or higher)
+- **npm** or **pnpm** or **yarn**
+- **Firebase Account** (for backend services)
+- **Android Studio** (for Android development)
+- **Xcode** (for iOS development, macOS only)
+
+## Setup Instructions
+
+### 1. Clone and Install Dependencies
+
+```bash
+# Install dependencies
+npm install
+# or
+pnpm install
+# or
+yarn install
+```
+
+### 2. Firebase Project Setup
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project (or use an existing one)
+3. Add a Web app to your Firebase project
+4. Copy the Firebase configuration values
+
+### 3. Environment Configuration
+
+1. Create a `.env.local` file in the root directory:
+
+```bash
+cp .env.example .env.local
+```
+
+2. Fill in your Firebase configuration values:
+
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key-here
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abcdef
+```
+
+### 4. Firebase Console Configuration
+
+#### Enable Authentication
+
+1. Go to **Authentication** > **Sign-in method** in Firebase Console
+2. Enable **Phone** authentication
+3. Enable **Email/Password** authentication (for dev mode)
+
+#### Setup Firestore
+
+1. Go to **Firestore Database** in Firebase Console
+2. Create a database (start in **test mode** for development)
+3. Apply the following security rules (recommended):
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection: only owner can read/write
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Requests collection
+    match /requests/{requestId} {
+      // Anyone authenticated can read
+      allow read: if request.auth != null;
+      
+      // Anyone authenticated can create
+      allow create: if request.auth != null && request.resource.data.senderId == request.auth.uid;
+      
+      // Updates: sender can update their own requests, commuter can update status
+      allow update: if request.auth != null && (
+        (resource.data.senderId == request.auth.uid) ||
+        (resource.data.commuterId == request.auth.uid && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']))
+      );
+    }
+  }
+}
+```
+
+**Note**: For production, you should add more strict rules and consider additional security measures.
+
+## Running Locally
+
+### Development Server
+
+```bash
+npm run dev
+# or
+pnpm dev
+# or
+yarn dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Building for Production
+
+```bash
+npm run build
+npm run start
+```
+
+The production build will be in the `out` directory (static export).
+
+## Capacitor Integration
+
+### Initial Setup
+
+1. **Install Capacitor CLI** (if not already installed globally):
+
+```bash
+npm install -g @capacitor/cli
+```
+
+2. **Add Android platform**:
+
+```bash
+npx cap add android
+```
+
+3. **Add iOS platform** (macOS only):
+
+```bash
+npx cap add ios
+```
+
+### Building for Mobile
+
+1. **Build the Next.js app**:
+
+```bash
+npm run build
+```
+
+2. **Sync Capacitor** (copies web build to native projects):
+
+```bash
+npx cap sync
+```
+
+### Running on Android
+
+1. **Open Android Studio**:
+
+```bash
+npx cap open android
+```
+
+2. In Android Studio:
+   - Wait for Gradle sync to complete
+   - Select a device/emulator
+   - Click the "Run" button (▶️)
+
+### Running on iOS (macOS only)
+
+1. **Open Xcode**:
+
+```bash
+npx cap open ios
+```
+
+2. In Xcode:
+   - Select a simulator or device
+   - Click the "Run" button (▶️)
+
+### After Making Changes
+
+Whenever you make changes to your Next.js app:
+
+1. Rebuild the app: `npm run build`
+2. Sync with Capacitor: `npx cap sync`
+3. The native apps will automatically reflect the changes
+
+## Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── auth/               # Authentication page
+│   ├── app/                # Main dashboard
+│   ├── requests/           # Request management pages
+│   ├── layout.tsx         # Root layout
+│   ├── page.tsx           # Landing page
+│   └── globals.css        # Global styles
+├── components/
+│   ├── forms/             # Form components
+│   │   ├── PhoneAuthForm.tsx
+│   │   └── EmailAuthForm.tsx
+│   └── ui/                 # Reusable UI components
+│       ├── Toast.tsx
+│       ├── StatusBadge.tsx
+│       └── RequestCard.tsx
+├── lib/
+│   ├── auth/              # Authentication context
+│   │   └── AuthProvider.tsx
+│   ├── firebase/          # Firebase configuration
+│   │   └── client.ts
+│   ├── firestore/         # Firestore operations
+│   │   ├── requests.ts
+│   │   └── users.ts
+│   ├── types/             # TypeScript types
+│   │   └── index.ts
+│   ├── utils/             # Utility functions
+│   │   └── otp.ts
+│   └── validation/        # Zod schemas
+│       └── schemas.ts
+└── hooks/                 # Custom React hooks
+    └── useToast.ts
+```
+
+## Data Model
+
+### Users Collection
+
+- Document ID: Firebase Auth `uid`
+- Fields:
+  - `phone`: string | null
+  - `email`: string | null
+  - `name`: string
+  - `role`: "sender" | "commuter" | "both"
+  - `createdAt`: Timestamp
+  - `updatedAt`: Timestamp
+
+### Requests Collection
+
+- Document ID: Auto-generated
+- Fields:
+  - `senderId`: string
+  - `commuterId`: string | null
+  - `pickupPincode`: string
+  - `pickupDetails`: string
+  - `dropPincode`: string
+  - `dropDetails`: string
+  - `itemDescription`: string
+  - `priceOffered`: number | null
+  - `status`: "open" | "accepted" | "picked" | "delivered" | "cancelled"
+  - `otpPickup`: number (4-digit)
+  - `otpDrop`: number (4-digit)
+  - `createdAt`: Timestamp
+  - `updatedAt`: Timestamp
+
+## Authentication Modes
+
+### Phone Authentication (Production)
+
+- Uses Firebase Phone Authentication
+- Requires reCAPTCHA verification
+- Default country code: +65 (Singapore)
+- Can be changed manually
+
+### Email/Password (Dev Mode)
+
+- Simple email and password authentication
+- Useful for local testing without phone numbers
+- Toggle between Login and Register modes
+
+## Usage Flow
+
+1. **Landing Page** → User clicks "Get started"
+2. **Authentication** → User signs in with Phone or Email
+3. **Dashboard** → User sees:
+   - **My Requests**: Requests they created
+   - **Available Requests**: Open requests they can accept
+4. **Create Request** → Sender creates a delivery request
+5. **Accept Request** → Commuter accepts an available request
+6. **OTP Verification**:
+   - Commuter verifies pickup OTP → Status: "picked"
+   - Commuter verifies drop OTP → Status: "delivered"
+
+## Future Improvements
+
+- 🔔 **Push Notifications**: Integrate Firebase Cloud Messaging (FCM)
+- 📍 **Geolocation**: Add map-based nearby matching using device location
+- 💳 **Payments**: Integrate payment gateway for price transactions
+- 🔒 **Enhanced Security**: Move OTP generation to Firebase Functions
+- 💬 **Chat**: Add in-app messaging between sender and commuter
+- 📊 **Analytics**: Add user analytics and request tracking
+- 🌍 **Multi-language**: Support multiple languages
+- ⭐ **Ratings**: Add rating system for users
+
+## Troubleshooting
+
+### Firebase Authentication Issues
+
+- Ensure Phone and Email/Password authentication are enabled in Firebase Console
+- Check that your Firebase config values in `.env.local` are correct
+- For Phone Auth, ensure reCAPTCHA is properly configured
+
+### Capacitor Build Issues
+
+- Make sure you've run `npm run build` before `npx cap sync`
+- Clear Capacitor cache: Delete `android` and `ios` folders, then re-add platforms
+- For Android: Ensure Android SDK is properly installed in Android Studio
+
+### TypeScript Errors
+
+- Run `npm install` to ensure all dependencies are installed
+- Check that `tsconfig.json` paths are correctly configured
+
+## License
+
+This project is private and proprietary.
+
+## Support
+
+For issues or questions, please contact the development team.
+
+---
+
+**Built with ❤️ using Next.js, Firebase, and Capacitor**
+
