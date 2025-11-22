@@ -173,14 +173,20 @@ export default function RiderDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Rider Dashboard</h1>
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+          <h1 className="text-xl font-bold text-gray-900">
+            <span className="text-[#00B14F]">Commute</span>
+            <span className="text-gray-900">Drop</span>
+          </h1>
           <button
-            onClick={signOut}
-            className="text-sm text-gray-600 hover:text-gray-900"
+            onClick={() => setMenuOpen(true)}
+            className="p-2 text-gray-600 hover:text-gray-900 active:bg-gray-100 rounded-lg transition-colors duration-150"
+            aria-label="Open menu"
           >
-            Logout
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
         </div>
       </header>
