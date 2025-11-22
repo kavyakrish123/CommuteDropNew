@@ -49,6 +49,10 @@ export default function EditProfilePage() {
     if (user) {
       getUser(user.uid)
         .then((data) => {
+          if (!data) {
+            setLoading(false);
+            return;
+          }
           setUserData(data);
           setCommuteType(data.commuteType || "other");
           form.reset({
