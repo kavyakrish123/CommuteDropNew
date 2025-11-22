@@ -8,6 +8,7 @@ interface RequestCardProps {
   request: DeliveryRequest;
   showActions?: boolean;
   onAccept?: () => void;
+  onCancel?: () => void;
   currentUserId?: string;
 }
 
@@ -15,6 +16,7 @@ export function RequestCard({
   request,
   showActions = false,
   onAccept,
+  onCancel,
   currentUserId,
 }: RequestCardProps) {
   const createdAt = request.createdAt
@@ -95,14 +97,23 @@ export function RequestCard({
             View
           </Link>
         )}
-                {showActions && onAccept && request.status === "created" && (
-                  <button
-                    onClick={onAccept}
-                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-green-700"
-                  >
-                    Request to Deliver
-                  </button>
-                )}
+        {showActions && onAccept && request.status === "created" && (
+          <button
+            onClick={onAccept}
+            className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-green-700"
+          >
+            Request to Deliver
+          </button>
+        )}
+        {onCancel && request.status === "created" && (
+          <button
+            onClick={onCancel}
+            className="px-3 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700"
+            title="Cancel this request"
+          >
+            Cancel
+          </button>
+        )}
       </div>
     </div>
   );

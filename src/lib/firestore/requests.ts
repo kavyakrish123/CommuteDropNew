@@ -122,10 +122,8 @@ export async function getAvailableRequests(
             return false;
           }
         }
-        // Filter by pincode if provided
-        if (filterPincode && req.pickupPincode) {
-          return req.pickupPincode.includes(filterPincode);
-        }
+        // Note: Pincode filtering is now done client-side for better flexibility
+        // This allows filtering by both pickup and drop pincode
         return true;
       });
 
@@ -333,5 +331,27 @@ export async function verifyDropOTP(
     return true;
   }
   return false;
+}
+
+export async function cancelRequest(requestId: string, senderId: string): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+  
+  if (request.senderId !== senderId) {
+    throw new Error("Only the sender can cancel this request");
+  }
+  
+  // Only allow cancellation if no rider has requested or been approved yet
+  if (request.status !== "created") {
+    throw new Error("Cannot cancel request. A rider has already requested or been approved.");
+  }
+  
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, {
+    status: "cancelled",
+    updatedAt: serverTimestamp(),
+  });
 }
 

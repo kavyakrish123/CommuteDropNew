@@ -180,20 +180,32 @@ export default function CreateRequestPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
-        {/* SG Compliance Warning */}
-        {step === 1 && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded">
-            <div className="flex">
-              <div className="ml-3">
-                <p className="text-sm text-yellow-700">
-                  <strong>Singapore Compliance:</strong> Ensure your item complies with
-                  Singapore laws. Prohibited items include cigarettes, alcohol, food, and
-                  illegal substances.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+                {/* SG Compliance Warning */}
+                {step === 1 && (
+                  <div className="space-y-3 mb-6">
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                      <div className="flex">
+                        <div className="ml-3">
+                          <p className="text-sm text-yellow-700">
+                            <strong>Singapore Compliance:</strong> Ensure your item complies with
+                            Singapore laws. Prohibited items include cigarettes, alcohol, food, and
+                            illegal substances.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                      <div className="flex">
+                        <div className="ml-3">
+                          <p className="text-sm text-red-700">
+                            <strong>⚠️ Ethical Reminder:</strong> It is unethical to create tasks and not show up when a rider arrives. 
+                            Please only create tasks you genuinely need delivered. No-shows may result in account restrictions.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
         <form
           onSubmit={form.handleSubmit(onSubmit)}

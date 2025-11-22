@@ -13,6 +13,7 @@ import {
   getRequestedTasks,
   approveRiderRequest,
   rejectRiderRequest,
+  cancelRequest,
 } from "@/lib/firestore/requests";
 import { RequestCard } from "@/components/ui/RequestCard";
 import { sortByDistance, getCurrentLocation } from "@/lib/utils/geolocation";
@@ -44,7 +45,7 @@ export default function DashboardPage() {
     if (user) {
       loadData();
     }
-  }, [user, activeTab, searchPincode]);
+  }, [user, activeTab, searchPincode, userLocation]); // Added userLocation to dependencies
 
   // Get user's current location when on available tasks tab
   useEffect(() => {
@@ -84,16 +85,23 @@ export default function DashboardPage() {
 
       // Load available tasks only when on that tab
       if (activeTab === "available") {
-        const available = await getAvailableRequests(
-          user.uid,
-          searchPincode || undefined
-        );
+        // Get all available requests (without pincode filter first)
+        const allAvailable = await getAvailableRequests(user.uid);
+        
+        // Apply pincode filter client-side (more flexible)
+        let filteredRequests = allAvailable;
+        if (searchPincode && searchPincode.trim()) {
+          filteredRequests = allAvailable.filter((req) => {
+            return req.pickupPincode?.includes(searchPincode.trim()) || 
+                   req.dropPincode?.includes(searchPincode.trim());
+          });
+        }
         
         // Sort by distance if user location is available
-        let sortedRequests = available;
+        let sortedRequests = filteredRequests;
         if (userLocation) {
           sortedRequests = sortByDistance(
-            available,
+            filteredRequests,
             userLocation.lat,
             userLocation.lng,
             10 // 10km radius
@@ -258,11 +266,23 @@ export default function DashboardPage() {
               </label>
               <input
                 type="text"
-                placeholder="Filter by pickup pincode..."
+                placeholder="Filter by pickup pincode (e.g., 123456)..."
                 value={searchPincode}
-                onChange={(e) => setSearchPincode(e.target.value)}
+                onChange={(e) => {
+                  // Allow full pincode input (digits only, max 6 digits)
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setSearchPincode(value);
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
+              {searchPincode && (
+                <button
+                  onClick={() => setSearchPincode("")}
+                  className="mt-1 text-sm text-indigo-600 hover:text-indigo-700"
+                >
+                  Clear filter
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -283,6 +303,20 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Ethical Warning */}
+        {activeTab === "my-requests" && (
+          <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded">
+            <div className="flex">
+              <div className="ml-3">
+                <p className="text-sm text-red-700">
+                  <strong>⚠️ Important:</strong> It is unethical to create tasks and not show up when a rider arrives. 
+                  Please only create tasks you genuinely need delivered. No-shows may result in account restrictions.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Content based on active tab - Grid Card Layout */}
         <div>
           {activeTab === "my-requests" && (
@@ -295,7 +329,22 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {myRequests.map((request) =>
                     request.id ? (
-                      <RequestCard key={request.id} request={request} currentUserId={user.uid} />
+                      <RequestCard 
+                        key={request.id} 
+                        request={request} 
+                        currentUserId={user.uid}
+                        onCancel={request.status === "created" ? async () => {
+                          if (confirm("Are you sure you want to cancel this request?")) {
+                            try {
+                              await cancelRequest(request.id!, user.uid);
+                              showToast("Request cancelled successfully", "success");
+                              loadData();
+                            } catch (error: any) {
+                              showToast(error.message || "Failed to cancel request", "error");
+                            }
+                          }
+                        } : undefined}
+                      />
                     ) : null
                   )}
                 </div>

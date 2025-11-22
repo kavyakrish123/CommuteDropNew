@@ -42,6 +42,7 @@ export function ChatWindow({ requestId, otherUserId, otherUserName }: ChatWindow
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

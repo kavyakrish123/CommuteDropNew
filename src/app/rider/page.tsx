@@ -38,7 +38,7 @@ export default function RiderDashboardPage() {
     if (user) {
       loadRequests();
     }
-  }, [user, activeTab, searchPincode]);
+  }, [user, activeTab, searchPincode, userLocation]); // Added userLocation to dependencies
 
   // Get user's current location when on available tasks tab
   useEffect(() => {
@@ -65,16 +65,23 @@ export default function RiderDashboardPage() {
     try {
       setLoading(true);
       if (activeTab === "available") {
-        const requests = await getAvailableRequests(
-          user.uid,
-          searchPincode || undefined
-        );
+        // Get all available requests (without pincode filter first)
+        const allAvailable = await getAvailableRequests(user.uid);
+        
+        // Apply pincode filter client-side (more flexible)
+        let filteredRequests = allAvailable;
+        if (searchPincode && searchPincode.trim()) {
+          filteredRequests = allAvailable.filter((req) => {
+            return req.pickupPincode?.includes(searchPincode.trim()) || 
+                   req.dropPincode?.includes(searchPincode.trim());
+          });
+        }
         
         // Sort by distance if user location is available
-        let sortedRequests = requests;
+        let sortedRequests = filteredRequests;
         if (userLocation) {
           sortedRequests = sortByDistance(
-            requests,
+            filteredRequests,
             userLocation.lat,
             userLocation.lng,
             10 // 10km radius
@@ -237,11 +244,23 @@ export default function RiderDashboardPage() {
               </label>
               <input
                 type="text"
-                placeholder="Filter by pickup pincode..."
+                placeholder="Filter by pickup pincode (e.g., 123456)..."
                 value={searchPincode}
-                onChange={(e) => setSearchPincode(e.target.value)}
+                onChange={(e) => {
+                  // Allow full pincode input (digits only, max 6 digits)
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setSearchPincode(value);
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
+              {searchPincode && (
+                <button
+                  onClick={() => setSearchPincode("")}
+                  className="mt-1 text-sm text-indigo-600 hover:text-indigo-700"
+                >
+                  Clear filter
+                </button>
+              )}
             </div>
           </div>
         )}

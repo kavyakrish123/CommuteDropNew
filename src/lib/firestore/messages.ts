@@ -69,7 +69,8 @@ export async function getMessages(
 
 export function subscribeToMessages(
   requestId: string,
-  callback: (messages: ChatMessage[]) => void
+  callback: (messages: ChatMessage[]) => void,
+  onError?: (error: Error) => void
 ): Unsubscribe {
   const q = query(
     collection(db, "messages"),
@@ -77,15 +78,37 @@ export function subscribeToMessages(
     orderBy("createdAt", "asc")
   );
 
-  return onSnapshot(q, (querySnapshot) => {
-    const messages = querySnapshot.docs.map(
-      (doc) =>
-        ({
-          id: doc.id,
-          ...doc.data(),
-        } as ChatMessage)
-    );
-    callback(messages);
-  });
+  return onSnapshot(
+    q,
+    (querySnapshot) => {
+      const messages = querySnapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          } as ChatMessage)
+      );
+      callback(messages);
+    },
+    (error) => {
+      console.error("Error subscribing to messages:", error);
+      if (error.code === "failed-precondition" || error.message?.includes("index")) {
+        const indexUrlMatch = error.message?.match(/https:\/\/[^\s\)]+/);
+        if (indexUrlMatch) {
+          console.error("🔗 Create Firestore index here:", indexUrlMatch[0]);
+          if (onError) {
+            onError(new Error(`Firestore index required. Check console for link: ${indexUrlMatch[0]}`));
+          }
+        } else {
+          console.error("Firestore index required for messages collection. Query: requestId == X, orderBy createdAt");
+          if (onError) {
+            onError(new Error("Firestore index required. Check console for details."));
+          }
+        }
+      } else if (onError) {
+        onError(error);
+      }
+    }
+  );
 }
 
