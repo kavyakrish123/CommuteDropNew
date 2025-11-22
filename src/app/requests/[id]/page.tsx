@@ -195,7 +195,7 @@ export default function RequestDetailPage() {
   const canStartTransit = isCommuter && request.status === "picked";
   const canDeliver = isCommuter && request.status === "in_transit";
   // Chat only available from approved status until delivery (disabled once delivered/completed)
-  const canChat = (isSender && request.commuterId) || isCommuter;
+  const canChat = Boolean((isSender && request.commuterId) || isCommuter);
   const chatAvailable = canChat && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status);
   const chatDisabled = canChat && (request.status === "delivered" || request.status === "completed");
 
