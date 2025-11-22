@@ -289,89 +289,188 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
 
   if (step === "otp") {
     return (
-      <form onSubmit={otpForm.handleSubmit(verifyOTP)} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Enter OTP
-          </label>
-          <input
-            {...otpForm.register("otp")}
-            type="text"
-            maxLength={6}
-            placeholder="000000"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          />
-          {otpForm.formState.errors.otp && (
-            <p className="mt-1 text-sm text-red-600">
-              {otpForm.formState.errors.otp.message}
-            </p>
-          )}
+      <div className="space-y-6 animate-fadeIn">
+        {/* Big OTP Icon */}
+        <div className="flex justify-center">
+          <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+            <svg
+              className="w-12 h-12 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+          </div>
         </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "Verifying..." : "Verify & Continue"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setStep("phone")}
-          className="w-full text-sm text-indigo-600 hover:text-indigo-700"
-        >
-          Change phone number
-        </button>
+
+        {/* Title and Description */}
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold text-gray-900">Enter Verification Code</h2>
+          <p className="text-gray-600">
+            We sent a 6-digit code to
+            <br />
+            <span className="font-semibold text-gray-900">
+              {phoneForm.getValues("phone") || "your phone"}
+            </span>
+          </p>
+        </div>
+
+        <form onSubmit={otpForm.handleSubmit(verifyOTP)} className="space-y-6">
+          {/* OTP Input - Large and Modern */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-3 text-center">
+              Verification Code
+            </label>
+            <input
+              {...otpForm.register("otp")}
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="000000"
+              autoFocus
+              className="w-full px-6 py-4 text-center text-3xl font-bold tracking-widest border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-200 bg-white"
+              style={{ letterSpacing: "0.5em" }}
+              onInput={(e) => {
+                // Only allow digits
+                const value = (e.target as HTMLInputElement).value.replace(/\D/g, "");
+                (e.target as HTMLInputElement).value = value;
+              }}
+            />
+            {otpForm.formState.errors.otp && (
+              <p className="mt-2 text-sm text-red-600 text-center">
+                {otpForm.formState.errors.otp.message}
+              </p>
+            )}
+          </div>
+
+          {/* Verify Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-2xl font-bold text-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all duration-150 shadow-lg shadow-green-500/30"
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Verifying...
+              </span>
+            ) : (
+              "Verify & Continue"
+            )}
+          </button>
+
+          {/* Change Phone Number */}
+          <button
+            type="button"
+            onClick={() => setStep("phone")}
+            className="w-full text-sm text-gray-600 hover:text-gray-900 active:text-gray-700 transition-colors duration-150 py-2"
+          >
+            ← Change phone number
+          </button>
+        </form>
         <div id="recaptcha-container"></div>
-      </form>
+      </div>
     );
   }
 
   return (
-    <form onSubmit={phoneForm.handleSubmit(sendOTP)} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Phone Number
-        </label>
-        <div className="flex">
-          <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-            +65
-          </span>
-          <input
-            {...phoneForm.register("phone")}
-            type="tel"
-            placeholder="91234567"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            onInput={(e) => {
-              // Remove any non-digit characters except + at the start
-              const value = (e.target as HTMLInputElement).value;
-              if (value.startsWith("+")) {
-                // Allow + and digits
-                (e.target as HTMLInputElement).value = value.replace(/[^\d+]/g, "");
-              } else {
-                // Only digits if no +
-                (e.target as HTMLInputElement).value = value.replace(/\D/g, "");
-              }
-            }}
-          />
+    <div className="space-y-6 animate-fadeIn">
+      {/* Big Phone Icon */}
+      <div className="flex justify-center">
+        <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+          <svg
+            className="w-12 h-12 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+            />
+          </svg>
         </div>
-        {phoneForm.formState.errors.phone && (
-          <p className="mt-1 text-sm text-red-600">
-            {phoneForm.formState.errors.phone.message}
-          </p>
-        )}
-        <p className="mt-1 text-xs text-gray-500">
-          Enter 8 digits for Singapore (+65), or include full number with country code
+      </div>
+
+      {/* Title and Description */}
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold text-gray-900">Enter Your Phone Number</h2>
+        <p className="text-gray-600">
+          We'll send you a verification code via SMS
         </p>
       </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {loading ? "Sending..." : "Send OTP"}
-      </button>
+
+      <form onSubmit={phoneForm.handleSubmit(sendOTP)} className="space-y-6">
+        {/* Phone Input - Large and Modern */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-3">
+            Phone Number
+          </label>
+          <div className="flex rounded-2xl overflow-hidden border-2 border-gray-300 focus-within:border-green-500 focus-within:ring-4 focus-within:ring-green-500/20 transition-all duration-200 bg-white">
+            <span className="inline-flex items-center px-4 bg-gray-50 text-gray-700 font-semibold text-lg border-r-2 border-gray-300">
+              +65
+            </span>
+            <input
+              {...phoneForm.register("phone")}
+              type="tel"
+              inputMode="tel"
+              placeholder="91234567"
+              className="flex-1 px-6 py-4 text-lg font-medium focus:outline-none bg-transparent"
+              onInput={(e) => {
+                // Remove any non-digit characters except + at the start
+                const value = (e.target as HTMLInputElement).value;
+                if (value.startsWith("+")) {
+                  // Allow + and digits
+                  (e.target as HTMLInputElement).value = value.replace(/[^\d+]/g, "");
+                } else {
+                  // Only digits if no +
+                  (e.target as HTMLInputElement).value = value.replace(/\D/g, "");
+                }
+              }}
+            />
+          </div>
+          {phoneForm.formState.errors.phone && (
+            <p className="mt-2 text-sm text-red-600">
+              {phoneForm.formState.errors.phone.message}
+            </p>
+          )}
+          <p className="mt-2 text-xs text-gray-500">
+            Enter 8 digits for Singapore (+65), or include full number with country code
+          </p>
+        </div>
+
+        {/* Send OTP Button */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-2xl font-bold text-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all duration-150 shadow-lg shadow-green-500/30"
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Sending...
+            </span>
+          ) : (
+            "Send OTP"
+          )}
+        </button>
+      </form>
       <div id="recaptcha-container"></div>
-    </form>
+    </div>
   );
 }
 
