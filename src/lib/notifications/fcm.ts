@@ -24,9 +24,19 @@ export async function requestNotificationPermission(): Promise<string | null> {
       return null;
     }
 
-    // Get FCM token
+    // Get FCM token - specify service worker registration
+    let serviceWorkerRegistration = null;
+    if ('serviceWorker' in navigator) {
+      try {
+        serviceWorkerRegistration = await navigator.serviceWorker.ready;
+      } catch (error) {
+        console.warn('Service worker not ready:', error);
+      }
+    }
+
     const token = await getToken(messaging, {
       vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+      serviceWorkerRegistration: serviceWorkerRegistration || undefined,
     });
 
     if (token) {

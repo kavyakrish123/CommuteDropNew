@@ -15,10 +15,23 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Validate Firebase config
+if (!firebaseConfig.projectId) {
+  console.error('Firebase configuration error: NEXT_PUBLIC_FIREBASE_PROJECT_ID is missing');
+  if (typeof window !== 'undefined') {
+    console.error('Please check your environment variables in Vercel or .env.local');
+  }
+}
+
 // Initialize Firebase (singleton pattern to avoid re-initialization)
 let app: FirebaseApp;
 if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
+  try {
+    app = initializeApp(firebaseConfig);
+  } catch (error) {
+    console.error('Firebase initialization error:', error);
+    throw error;
+  }
 } else {
   app = getApps()[0];
 }
