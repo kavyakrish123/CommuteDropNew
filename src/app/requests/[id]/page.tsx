@@ -194,9 +194,10 @@ export default function RequestDetailPage() {
   const canVerifyPickupOTP = isCommuter && request.status === "waiting_pickup";
   const canStartTransit = isCommuter && request.status === "picked";
   const canDeliver = isCommuter && request.status === "in_transit";
-  // Chat only available from approved status until completed (not before approval)
+  // Chat only available from approved status until delivery (disabled once delivered/completed)
   const canChat = (isSender && request.commuterId) || isCommuter;
-  const chatAvailable = canChat && ["approved", "waiting_pickup", "picked", "in_transit", "delivered"].includes(request.status);
+  const chatAvailable = canChat && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status);
+  const chatDisabled = canChat && (request.status === "delivered" || request.status === "completed");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -347,25 +348,41 @@ export default function RequestDetailPage() {
             </div>
           )}
 
-          {/* Chat Toggle - Only show when rider is approved */}
-          {chatAvailable && (
+          {/* Chat Toggle - Show if chat is available or was available (for viewing history) */}
+          {(chatAvailable || chatDisabled) && (
             <div className="pt-4 border-t border-gray-200">
-              <button
-                onClick={() => setShowChat(!showChat)}
-                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700"
-              >
-                {showChat ? "Hide Chat" : "Open Chat"}
-              </button>
+              {chatDisabled ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 text-center mb-2">
+                    Chat is disabled. Delivery has been completed.
+                  </p>
+                  <button
+                    onClick={() => setShowChat(!showChat)}
+                    className="w-full bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed"
+                    disabled
+                  >
+                    {showChat ? "Hide Chat History" : "View Chat History (Read-only)"}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowChat(!showChat)}
+                  className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700"
+                >
+                  {showChat ? "Hide Chat" : "Open Chat"}
+                </button>
+              )}
             </div>
           )}
 
-          {/* Chat Window - Only visible when rider is approved */}
-          {showChat && chatAvailable && (
+          {/* Chat Window - Show if available or disabled (for viewing history) */}
+          {showChat && (chatAvailable || chatDisabled) && (
             <div className="pt-4 border-t border-gray-200">
               <ChatWindow
                 requestId={requestId}
                 otherUserId={isSender ? (request.commuterId || "") : request.senderId}
                 otherUserName={isSender ? commuterName : senderName}
+                disabled={chatDisabled}
               />
             </div>
           )}

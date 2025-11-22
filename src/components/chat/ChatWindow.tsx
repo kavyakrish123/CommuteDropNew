@@ -35,9 +35,10 @@ interface ChatWindowProps {
   requestId: string;
   otherUserId: string;
   otherUserName: string;
+  disabled?: boolean; // If true, chat is read-only (delivery completed)
 }
 
-export function ChatWindow({ requestId, otherUserId, otherUserName }: ChatWindowProps) {
+export function ChatWindow({ requestId, otherUserId, otherUserName, disabled = false }: ChatWindowProps) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -48,33 +49,46 @@ export function ChatWindow({ requestId, otherUserId, otherUserName }: ChatWindow
   useEffect(() => {
     if (!user || !requestId) return;
 
-    // Request notification permission on mount
-    requestNotificationPermission();
+    // Request notification permission on mount (only if chat is enabled)
+    if (!disabled) {
+      requestNotificationPermission();
+    }
 
     const seenMessageIds = new Set<string>();
 
-    const unsubscribe = subscribeToMessages(requestId, (updatedMessages) => {
-      // Check for new messages (not sent by current user and not seen before)
-      updatedMessages.forEach((msg) => {
-        if (msg.id && msg.senderId !== user.uid && !seenMessageIds.has(msg.id)) {
-          // Show notification like a phone (always, even when page is focused)
-          showMessageNotification(msg, otherUserName);
-          seenMessageIds.add(msg.id);
+    const unsubscribe = subscribeToMessages(
+      requestId,
+      (updatedMessages) => {
+        // Only show notifications if chat is enabled (not disabled/read-only)
+        if (!disabled) {
+          // Check for new messages (not sent by current user and not seen before)
+          updatedMessages.forEach((msg) => {
+            if (msg.id && msg.senderId !== user.uid && !seenMessageIds.has(msg.id)) {
+              // Show notification like a phone (always, even when page is focused)
+              showMessageNotification(msg, otherUserName);
+              seenMessageIds.add(msg.id);
+            }
+          });
         }
-      });
 
-      setMessages(updatedMessages);
-    });
+        setMessages(updatedMessages);
+        setError(null); // Clear error on success
+      },
+      (error) => {
+        console.error("Chat subscription error:", error);
+        setError(error.message || "Failed to load messages. Please check console for Firestore index link.");
+      }
+    );
 
     return () => unsubscribe();
-  }, [user, requestId, otherUserName]);
+  }, [user, requestId, otherUserName, disabled]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!user || !newMessage.trim()) return;
+    if (!user || !newMessage.trim() || disabled) return; // Don't allow sending if disabled
 
     try {
       await sendMessage(requestId, user.uid, otherUserId, newMessage.trim());
@@ -86,7 +100,7 @@ export function ChatWindow({ requestId, otherUserId, otherUserName }: ChatWindow
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user || disabled) return; // Don't allow uploading if disabled
 
     if (file.size > 5 * 1024 * 1024) {
       alert("Photo must be less than 5MB");
@@ -114,7 +128,14 @@ export function ChatWindow({ requestId, otherUserId, otherUserName }: ChatWindow
     <div className="flex flex-col h-[500px] bg-white rounded-lg shadow-md border border-gray-200">
       {/* Chat Header */}
       <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-        <h3 className="font-semibold text-gray-900">Chat with {otherUserName}</h3>
+        <div className="flex justify-between items-center">
+          <h3 className="font-semibold text-gray-900">Chat with {otherUserName}</h3>
+          {disabled && (
+            <span className="text-xs px-2 py-1 bg-gray-200 text-gray-600 rounded">
+              Read-only (Delivery completed)
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
@@ -161,59 +182,67 @@ export function ChatWindow({ requestId, otherUserId, otherUserName }: ChatWindow
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-        <div className="flex gap-2">
-          <label className="cursor-pointer">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              disabled={uploadingPhoto}
-              className="hidden"
-            />
-            <div className="p-2 text-gray-600 hover:text-indigo-600">
-              {uploadingPhoto ? (
-                <span className="text-sm">Uploading...</span>
-              ) : (
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              )}
-            </div>
-          </label>
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            placeholder="Type a message..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim() || uploadingPhoto}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Send
-          </button>
+      {/* Input Area - Disabled when delivery is complete */}
+      {disabled ? (
+        <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+          <div className="text-center text-sm text-gray-500 py-2">
+            Chat is disabled. Delivery has been completed.
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+          <div className="flex gap-2">
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                disabled={uploadingPhoto}
+                className="hidden"
+              />
+              <div className="p-2 text-gray-600 hover:text-indigo-600">
+                {uploadingPhoto ? (
+                  <span className="text-sm">Uploading...</span>
+                ) : (
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                )}
+              </div>
+            </label>
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              placeholder="Type a message..."
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!newMessage.trim() || uploadingPhoto}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

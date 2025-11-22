@@ -166,7 +166,7 @@ export default function RiderDashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 py-6 pb-24">
         {/* Navigation Tabs */}
         <div className="flex border-b border-gray-200 mb-6">
           <Link
@@ -297,7 +297,7 @@ export default function RiderDashboardPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
                 {availableRequests.map((request) =>
                   request.id ? (
                     <RequestCard
@@ -316,7 +316,7 @@ export default function RiderDashboardPage() {
               <p>No active tasks. Request a task from the Available Tasks tab.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
               {activeTasks.map((task) =>
                 task.id ? (
                   <RequestCard key={task.id} request={task} currentUserId={user.uid} />

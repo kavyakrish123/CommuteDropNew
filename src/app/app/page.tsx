@@ -184,7 +184,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 py-6 pb-24">
         {/* Tabs - Unified Dashboard */}
         <div className="flex border-b border-gray-200 mb-6">
           <button
@@ -326,7 +326,7 @@ export default function DashboardPage() {
                   <p>No requests yet. Create your first request!</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
                   {myRequests.map((request) =>
                     request.id ? (
                       <RequestCard 
@@ -359,7 +359,7 @@ export default function DashboardPage() {
                   <p>No active tasks. Request a task from the Available Tasks tab.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
                   {myActiveTasks.map((task) =>
                     task.id ? (
                       <RequestCard key={task.id} request={task} currentUserId={user.uid} />
@@ -385,7 +385,7 @@ export default function DashboardPage() {
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
                   {availableRequests.map((request) =>
                     request.id ? (
                       <RequestCard
@@ -404,10 +404,11 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Floating Action Button */}
+      {/* Floating Action Button - Mobile optimized */}
       <Link
         href="/requests/create"
-        className="fixed bottom-6 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-indigo-700 transition-colors"
+        className="fixed bottom-6 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-indigo-700 transition-colors z-50"
+        style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         +
       </Link>
