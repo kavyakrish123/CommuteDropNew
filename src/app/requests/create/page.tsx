@@ -134,6 +134,7 @@ export default function CreateRequestPage() {
 
       const requestId = await createRequest(user.uid, {
         ...data,
+        priceOffered: data.priceOffered ?? null,
         itemPhoto: itemPhotoUrl_final,
         pickupLat: pickupLocation?.lat || null,
         pickupLng: pickupLocation?.lng || null,
