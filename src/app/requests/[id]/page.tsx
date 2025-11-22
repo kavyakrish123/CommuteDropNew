@@ -48,6 +48,7 @@ export default function RequestDetailPage() {
   const [senderName, setSenderName] = useState<string>("");
   const [commuterName, setCommuterName] = useState<string>("");
   const [requestedRider, setRequestedRider] = useState<User | null>(null);
+  const [requestedRiders, setRequestedRiders] = useState<Array<{ rider: User; uid: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [showOTPs, setShowOTPs] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -95,11 +96,26 @@ export default function RequestDetailPage() {
           setCommuterName(commuter?.name || "Unknown");
         }
 
-        // Load requested rider if status is "requested"
-        if (req.status === "requested" && req.requestedBy) {
-          const rider = await getUser(req.requestedBy);
-          setRequestedRider(rider);
+        // Load all requested riders if status is "requested"
+        if (req.status === "requested") {
+          const riderIds = req.requestedRiders || (req.requestedBy ? [req.requestedBy] : []);
+          if (riderIds.length > 0) {
+            const ridersWithIds = await Promise.all(
+              riderIds.map(async (id) => {
+                const rider = await getUser(id).catch(() => null);
+                return rider ? { rider, uid: id } : null;
+              })
+            );
+            const validRiders = ridersWithIds.filter((r): r is { rider: User; uid: string } => r !== null);
+            setRequestedRiders(validRiders);
+            // Keep first rider for backward compatibility
+            setRequestedRider(validRiders[0]?.rider || null);
+          } else {
+            setRequestedRiders([]);
+            setRequestedRider(null);
+          }
         } else {
+          setRequestedRiders([]);
           setRequestedRider(null);
         }
       },
@@ -150,33 +166,37 @@ export default function RequestDetailPage() {
     }
   };
 
-  const handleApprove = async () => {
+  const handleApprove = async (riderId: string) => {
     if (!request) return;
 
     try {
-      await approveRiderRequest(requestId);
+      await approveRiderRequest(requestId, riderId);
       showToast("Rider approved! They can now proceed with pickup.", "success");
       // Real-time listener will update automatically
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error approving rider:", error);
-      showToast("Failed to approve rider", "error");
+      showToast(error.message || "Failed to approve rider", "error");
     }
   };
 
-  const handleReject = async () => {
+  const handleReject = async (riderId?: string) => {
     if (!request) return;
 
-    if (!confirm("Are you sure you want to reject this rider's request?")) {
+    const message = riderId 
+      ? "Are you sure you want to reject this rider's request?"
+      : "Are you sure you want to reject all rider requests?";
+    
+    if (!confirm(message)) {
       return;
     }
 
     try {
-      await rejectRiderRequest(requestId);
-      showToast("Rider request rejected.", "success");
+      await rejectRiderRequest(requestId, riderId);
+      showToast(riderId ? "Rider request rejected." : "All rider requests rejected.", "success");
       // Real-time listener will update automatically
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error rejecting rider:", error);
-      showToast("Failed to reject rider", "error");
+      showToast(error.message || "Failed to reject rider", "error");
     }
   };
 
@@ -429,14 +449,30 @@ export default function RequestDetailPage() {
             </div>
           )}
 
-          {/* Rider Request Card (for sender to approve/reject) */}
-          {canApprove && requestedRider && (
-            <div className="pt-4 border-t border-gray-200">
-              <RiderProfileCard
-                rider={requestedRider}
-                onApprove={handleApprove}
-                onReject={handleReject}
-              />
+          {/* Rider Request Cards (for sender to approve/reject) */}
+          {canApprove && requestedRiders.length > 0 && (
+            <div className="pt-4 border-t border-gray-200 space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Rider Requests ({requestedRiders.length})
+                </h3>
+                {requestedRiders.length > 1 && (
+                  <button
+                    onClick={() => handleReject()}
+                    className="text-sm text-red-600 hover:text-red-700 active:text-red-800"
+                  >
+                    Reject All
+                  </button>
+                )}
+              </div>
+              {requestedRiders.map(({ rider, uid }) => (
+                <RiderProfileCard
+                  key={uid}
+                  rider={rider}
+                  onApprove={() => handleApprove(uid)}
+                  onReject={() => handleReject(uid)}
+                />
+              ))}
             </div>
           )}
 

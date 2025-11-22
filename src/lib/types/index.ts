@@ -51,7 +51,8 @@ export interface DeliveryRequest {
   id?: string;
   senderId: string;
   commuterId: string | null;
-  requestedBy?: string | null; // Rider who requested (before approval)
+  requestedBy?: string | null; // DEPRECATED: Use requestedRiders array instead
+  requestedRiders?: string[]; // Array of rider IDs who requested (queue)
   pickupPincode: string;
   pickupDetails: string;
   dropPincode: string;

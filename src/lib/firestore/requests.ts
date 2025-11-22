@@ -152,40 +152,91 @@ export async function requestToDeliver(
   requestId: string,
   commuterId: string
 ): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+
+  // Check if already requested
+  const requestedRiders = request.requestedRiders || [];
+  if (requestedRiders.includes(commuterId)) {
+    throw new Error("You have already requested this task");
+  }
+
+  // Check if already approved or has a commuter
+  if (request.commuterId || request.status !== "created") {
+    throw new Error("This task is no longer available");
+  }
+
   const docRef = doc(db, "requests", requestId);
+  
+  // Add to queue and set status to requested if first request
+  const updatedRiders = [...requestedRiders, commuterId];
   await updateDoc(docRef, {
-    requestedBy: commuterId,
+    requestedRiders: updatedRiders,
+    requestedBy: updatedRiders[0], // Keep for backward compatibility
     status: "requested",
     updatedAt: serverTimestamp(),
   });
 }
 
 export async function approveRiderRequest(
-  requestId: string
+  requestId: string,
+  riderId: string
 ): Promise<void> {
   const request = await getRequest(requestId);
-  if (!request || !request.requestedBy) {
-    throw new Error("No rider request found");
+  if (!request) {
+    throw new Error("Request not found");
+  }
+
+  const requestedRiders = request.requestedRiders || [];
+  if (!requestedRiders.includes(riderId)) {
+    throw new Error("This rider has not requested this task");
   }
 
   const docRef = doc(db, "requests", requestId);
+  
+  // Approve the selected rider and clear the queue
   await updateDoc(docRef, {
-    commuterId: request.requestedBy,
-    requestedBy: null,
+    commuterId: riderId,
+    requestedRiders: [],
+    requestedBy: null, // Clear for backward compatibility
     status: "approved",
     updatedAt: serverTimestamp(),
   });
 }
 
 export async function rejectRiderRequest(
-  requestId: string
+  requestId: string,
+  riderId?: string
 ): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+
   const docRef = doc(db, "requests", requestId);
-  await updateDoc(docRef, {
-    requestedBy: null,
-    status: "created", // Return to created so other riders can request
-    updatedAt: serverTimestamp(),
-  });
+  
+  if (riderId) {
+    // Reject specific rider
+    const requestedRiders = request.requestedRiders || [];
+    const updatedRiders = requestedRiders.filter(id => id !== riderId);
+    
+    await updateDoc(docRef, {
+      requestedRiders: updatedRiders,
+      requestedBy: updatedRiders.length > 0 ? updatedRiders[0] : null,
+      status: updatedRiders.length > 0 ? "requested" : "created",
+      updatedAt: serverTimestamp(),
+    });
+  } else {
+    // Reject all riders (clear queue)
+    await updateDoc(docRef, {
+      requestedRiders: [],
+      requestedBy: null,
+      status: "created", // Return to created so other riders can request
+      updatedAt: serverTimestamp(),
+    });
+  }
 }
 
 export async function getRequestedTasks(senderId: string): Promise<DeliveryRequest[]> {
@@ -228,19 +279,27 @@ export async function getRiderActiveTasks(commuterId: string): Promise<DeliveryR
 }
 
 export async function getRiderRequestedTasks(commuterId: string): Promise<DeliveryRequest[]> {
+  // Get all requests with status "requested" and filter by array-contains
+  // Note: Firestore doesn't support array-contains with where on status, so we fetch and filter
   const q = query(
     collection(db, "requests"),
-    where("requestedBy", "==", commuterId),
     where("status", "==", "requested")
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(
-    (doc) =>
-      ({
-        id: doc.id,
-        ...doc.data(),
-      } as DeliveryRequest)
-  );
+  return querySnapshot.docs
+    .map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        } as DeliveryRequest)
+    )
+    .filter((req) => {
+      // Check both new array field and old single field for backward compatibility
+      const requestedRiders = req.requestedRiders || [];
+      const requestedBy = req.requestedBy;
+      return requestedRiders.includes(commuterId) || requestedBy === commuterId;
+    });
 }
 
 export async function getRiderCurrentPickup(commuterId: string): Promise<DeliveryRequest | null> {
