@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { DeliveryRequest } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
+import { CountdownTimer } from "./CountdownTimer";
 import { format } from "date-fns";
 
 interface RequestCardProps {
@@ -26,7 +27,7 @@ export function RequestCard({
   return (
     <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
       <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <StatusBadge status={request.status} />
           {isMyRequest && (
             <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
@@ -37,6 +38,9 @@ export function RequestCard({
             <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
               Your Task
             </span>
+          )}
+          {request.status === "created" && request.expiresAt && (
+            <CountdownTimer expiresAt={request.expiresAt} />
           )}
         </div>
         <span className="text-xs text-gray-500">{createdAt}</span>
@@ -91,14 +95,14 @@ export function RequestCard({
             View
           </Link>
         )}
-        {showActions && onAccept && request.status === "created" && (
-          <button
-            onClick={onAccept}
-            className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-green-700"
-          >
-            Accept
-          </button>
-        )}
+                {showActions && onAccept && request.status === "created" && (
+                  <button
+                    onClick={onAccept}
+                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-green-700"
+                  >
+                    Request to Deliver
+                  </button>
+                )}
       </div>
     </div>
   );

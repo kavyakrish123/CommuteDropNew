@@ -8,11 +8,14 @@ import {
   getMyRequests, 
   getRiderActiveTasks, 
   getAvailableRequests,
-  canRiderAcceptTask,
-  acceptRequest,
+  canRiderRequestTask,
+  requestToDeliver,
+  getRequestedTasks,
+  approveRiderRequest,
+  rejectRiderRequest,
 } from "@/lib/firestore/requests";
 import { RequestCard } from "@/components/ui/RequestCard";
-import { sortByDistance } from "@/lib/utils/distance";
+import { sortByDistance, getCurrentLocation } from "@/lib/utils/geolocation";
 import Link from "next/link";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
@@ -23,10 +26,12 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"my-requests" | "my-tasks" | "available">("my-requests");
   const [myRequests, setMyRequests] = useState<DeliveryRequest[]>([]);
   const [myActiveTasks, setMyActiveTasks] = useState<DeliveryRequest[]>([]);
+  const [requestedTasks, setRequestedTasks] = useState<DeliveryRequest[]>([]);
   const [availableRequests, setAvailableRequests] = useState<DeliveryRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchPincode, setSearchPincode] = useState("");
-  const [userPincode, setUserPincode] = useState("");
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const { toasts, showToast, removeToast } = useToast();
 
   useEffect(() => {
@@ -41,6 +46,25 @@ export default function DashboardPage() {
     }
   }, [user, activeTab, searchPincode]);
 
+  // Get user's current location when on available tasks tab
+  useEffect(() => {
+    if (activeTab === "available" && !userLocation) {
+      getCurrentLocation()
+        .then((location) => {
+          if (location) {
+            setUserLocation(location);
+            setLocationError(null);
+          } else {
+            setLocationError("Location access denied. Please enable location to see nearby tasks.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error getting location:", error);
+          setLocationError("Unable to get your location. Showing all tasks.");
+        });
+    }
+  }, [activeTab, userLocation]);
+
   const loadData = async () => {
     if (!user) return;
 
@@ -48,13 +72,15 @@ export default function DashboardPage() {
       setLoading(true);
       
       // Always load "My Requests" (as sender) and "My Active Tasks" (as rider)
-      const [requests, activeTasks] = await Promise.all([
+      const [requests, activeTasks, requested] = await Promise.all([
         getMyRequests(user.uid),
         getRiderActiveTasks(user.uid),
+        getRequestedTasks(user.uid),
       ]);
       
       setMyRequests(requests);
       setMyActiveTasks(activeTasks);
+      setRequestedTasks(requested);
 
       // Load available tasks only when on that tab
       if (activeTab === "available") {
@@ -63,10 +89,15 @@ export default function DashboardPage() {
           searchPincode || undefined
         );
         
-        // Sort by distance if user pincode provided
+        // Sort by distance if user location is available
         let sortedRequests = available;
-        if (userPincode) {
-          sortedRequests = sortByDistance(available, userPincode);
+        if (userLocation) {
+          sortedRequests = sortByDistance(
+            available,
+            userLocation.lat,
+            userLocation.lng,
+            10 // 10km radius
+          );
         }
         
         setAvailableRequests(sortedRequests);
@@ -94,27 +125,27 @@ export default function DashboardPage() {
     }
   };
 
-  const handleAccept = async (requestId: string) => {
+  const handleRequest = async (requestId: string) => {
     if (!user) return;
 
     try {
       // Check eligibility
-      const eligibility = await canRiderAcceptTask(user.uid);
-      if (!eligibility.canAccept) {
-        showToast(eligibility.reason || "Cannot accept this task", "error");
+      const eligibility = await canRiderRequestTask(user.uid);
+      if (!eligibility.canRequest) {
+        showToast(eligibility.reason || "Cannot request this task", "error");
         return;
       }
 
-      if (!confirm("Are you sure you want to accept this request?")) {
+      if (!confirm("Request to deliver this task? The sender will review your profile before approval.")) {
         return;
       }
 
-      await acceptRequest(requestId, user.uid);
-      showToast("Request accepted successfully!", "success");
+      await requestToDeliver(requestId, user.uid);
+      showToast("Request sent! Waiting for sender approval.", "success");
       loadData(); // Reload all data
     } catch (error) {
-      console.error("Error accepting request:", error);
-      showToast("Failed to accept request", "error");
+      console.error("Error requesting task:", error);
+      showToast("Failed to request task", "error");
     }
   };
 
@@ -185,18 +216,41 @@ export default function DashboardPage() {
           <div className="mb-4 space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Your Location (Postal Code)
+                Your Location
               </label>
-              <input
-                type="text"
-                placeholder="123456"
-                value={userPincode}
-                onChange={(e) => setUserPincode(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Enter your postal code to see tasks sorted by distance (within 1km)
-              </p>
+              {userLocation ? (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>Location detected - showing tasks sorted by distance (within 10km)</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <button
+                    onClick={async () => {
+                      const location = await getCurrentLocation();
+                      if (location) {
+                        setUserLocation(location);
+                        setLocationError(null);
+                        loadData(); // Reload to sort by distance
+                      } else {
+                        setLocationError("Location access denied. Please enable location in your browser settings.");
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
+                  >
+                    Use My Location
+                  </button>
+                  {locationError && (
+                    <p className="text-xs text-red-600">{locationError}</p>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    Enable location to see tasks sorted by distance from you
+                  </p>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -229,8 +283,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Content based on active tab */}
-        <div className="space-y-4">
+        {/* Content based on active tab - Grid Card Layout */}
+        <div>
           {activeTab === "my-requests" && (
             <>
               {myRequests.length === 0 ? (
@@ -238,11 +292,13 @@ export default function DashboardPage() {
                   <p>No requests yet. Create your first request!</p>
                 </div>
               ) : (
-                myRequests.map((request) =>
-                  request.id ? (
-                    <RequestCard key={request.id} request={request} currentUserId={user.uid} />
-                  ) : null
-                )
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {myRequests.map((request) =>
+                    request.id ? (
+                      <RequestCard key={request.id} request={request} currentUserId={user.uid} />
+                    ) : null
+                  )}
+                </div>
               )}
             </>
           )}
@@ -251,14 +307,16 @@ export default function DashboardPage() {
             <>
               {myActiveTasks.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                  <p>No active tasks. Accept a task from the Available Tasks tab.</p>
+                  <p>No active tasks. Request a task from the Available Tasks tab.</p>
                 </div>
               ) : (
-                myActiveTasks.map((task) =>
-                  task.id ? (
-                    <RequestCard key={task.id} request={task} currentUserId={user.uid} />
-                  ) : null
-                )
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {myActiveTasks.map((task) =>
+                    task.id ? (
+                      <RequestCard key={task.id} request={task} currentUserId={user.uid} />
+                    ) : null
+                  )}
+                </div>
               )}
             </>
           )}
@@ -278,17 +336,19 @@ export default function DashboardPage() {
                   )}
                 </div>
               ) : (
-                availableRequests.map((request) =>
-                  request.id ? (
-                    <RequestCard
-                      key={request.id}
-                      request={request}
-                      showActions
-                      onAccept={() => request.id && handleAccept(request.id)}
-                      currentUserId={user.uid}
-                    />
-                  ) : null
-                )
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {availableRequests.map((request) =>
+                    request.id ? (
+                      <RequestCard
+                        key={request.id}
+                        request={request}
+                        showActions
+                        onAccept={() => request.id && handleRequest(request.id)}
+                        currentUserId={user.uid}
+                      />
+                    ) : null
+                  )}
+                </div>
               )}
             </>
           )}

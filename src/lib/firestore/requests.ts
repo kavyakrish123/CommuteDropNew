@@ -27,6 +27,10 @@ export async function createRequest(
     category: ItemCategory;
     itemPhoto?: string | null;
     priceOffered: number | null;
+    pickupLat?: number | null;
+    pickupLng?: number | null;
+    dropLat?: number | null;
+    dropLng?: number | null;
   }
 ): Promise<string> {
   const otpPickup = generateOTP();
@@ -87,7 +91,7 @@ export async function getAvailableRequests(
   // If you get an error, Firebase will provide a link to create the index
   const q = query(
     collection(db, "requests"),
-    where("status", "==", "created"), // Updated status
+    where("status", "==", "created"), // Only unassigned tasks
     where("senderId", "!=", currentUserId)
   );
   
@@ -108,6 +112,13 @@ export async function getAvailableRequests(
         if (req.expiresAt) {
           const expiryDate = req.expiresAt.toDate();
           if (expiryDate < now) {
+            // Mark as expired in database (async, don't wait)
+            if (req.id && req.status === "created") {
+              updateDoc(doc(db, "requests", req.id), {
+                status: "expired",
+                updatedAt: serverTimestamp(),
+              }).catch(console.error);
+            }
             return false;
           }
         }
@@ -137,16 +148,60 @@ export async function getAvailableRequests(
   }
 }
 
-export async function acceptRequest(
+export async function requestToDeliver(
   requestId: string,
   commuterId: string
 ): Promise<void> {
   const docRef = doc(db, "requests", requestId);
   await updateDoc(docRef, {
-    commuterId,
-    status: "accepted",
+    requestedBy: commuterId,
+    status: "requested",
     updatedAt: serverTimestamp(),
   });
+}
+
+export async function approveRiderRequest(
+  requestId: string
+): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request || !request.requestedBy) {
+    throw new Error("No rider request found");
+  }
+
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, {
+    commuterId: request.requestedBy,
+    requestedBy: null,
+    status: "approved",
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function rejectRiderRequest(
+  requestId: string
+): Promise<void> {
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, {
+    requestedBy: null,
+    status: "created", // Return to created so other riders can request
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function getRequestedTasks(senderId: string): Promise<DeliveryRequest[]> {
+  const q = query(
+    collection(db, "requests"),
+    where("senderId", "==", senderId),
+    where("status", "==", "requested")
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(
+    (doc) =>
+      ({
+        id: doc.id,
+        ...doc.data(),
+      } as DeliveryRequest)
+  );
 }
 
 export async function getRiderActiveTasks(commuterId: string): Promise<DeliveryRequest[]> {
@@ -159,7 +214,7 @@ export async function getRiderActiveTasks(commuterId: string): Promise<DeliveryR
   const querySnapshot = await getDocs(q);
   
   // Active statuses: tasks that are not yet completed
-  const activeStatuses: RequestStatus[] = ["accepted", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"];
+  const activeStatuses: RequestStatus[] = ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"];
   
   return querySnapshot.docs
     .map(
@@ -172,36 +227,60 @@ export async function getRiderActiveTasks(commuterId: string): Promise<DeliveryR
     .filter((req) => activeStatuses.includes(req.status));
 }
 
+export async function getRiderRequestedTasks(commuterId: string): Promise<DeliveryRequest[]> {
+  const q = query(
+    collection(db, "requests"),
+    where("requestedBy", "==", commuterId),
+    where("status", "==", "requested")
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(
+    (doc) =>
+      ({
+        id: doc.id,
+        ...doc.data(),
+      } as DeliveryRequest)
+  );
+}
+
 export async function getRiderCurrentPickup(commuterId: string): Promise<DeliveryRequest | null> {
   // Get the current pickup task (one that hasn't been picked up yet)
   const activeTasks = await getRiderActiveTasks(commuterId);
   
   // Find tasks that are waiting for pickup OTP verification
   const waitingPickup = activeTasks.find(
-    (task) => task.status === "accepted" || task.status === "waiting_pickup" || task.status === "pickup_otp_pending"
+    (task) => task.status === "approved" || task.status === "waiting_pickup" || task.status === "pickup_otp_pending"
   );
   
   return waitingPickup || null;
 }
 
-export async function canRiderAcceptTask(commuterId: string): Promise<{ canAccept: boolean; reason?: string }> {
+export async function canRiderRequestTask(commuterId: string): Promise<{ canRequest: boolean; reason?: string }> {
   const activeTasks = await getRiderActiveTasks(commuterId);
+  const requestedTasks = await getRiderRequestedTasks(commuterId);
   
-  // NEW RULE: Only one pickup at a time - must verify pickup OTP before accepting next task
-  // Once a task is "picked" (OTP verified), rider can accept another task
+  // Check if already requested this task
+  if (requestedTasks.length > 0) {
+    return {
+      canRequest: false,
+      reason: "You have already requested to deliver a task. Wait for sender approval.",
+    };
+  }
+  
+  // NEW RULE: Only one pickup at a time - must verify pickup OTP before requesting next task
   if (activeTasks.length > 0) {
     // Check if there's a task in pickup phase (not yet picked)
     const currentPickup = await getRiderCurrentPickup(commuterId);
     
     if (currentPickup) {
       return {
-        canAccept: false,
-        reason: `You have an active pickup. Please go to the pickup location and verify the OTP before accepting a new task.`,
+        canRequest: false,
+        reason: `You have an active pickup. Please go to the pickup location and verify the OTP before requesting a new task.`,
       };
     }
   }
   
-  return { canAccept: true };
+  return { canRequest: true };
 }
 
 export async function verifyPickupOTP(

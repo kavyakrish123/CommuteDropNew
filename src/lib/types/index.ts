@@ -12,13 +12,16 @@ export interface User {
   payNowQR?: string | null;
   policiesAccepted: boolean;
   onboardingCompleted: boolean;
+  rating?: number | null; // Average rating (1-5)
+  totalDeliveries?: number; // Total completed deliveries
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
 export type RequestStatus =
   | "created"
-  | "accepted"
+  | "requested" // Rider has requested to deliver
+  | "approved" // Sender approved the rider
   | "waiting_pickup"
   | "pickup_otp_pending"
   | "picked"
@@ -26,7 +29,8 @@ export type RequestStatus =
   | "delivered"
   | "completed"
   | "cancelled"
-  | "expired";
+  | "expired"
+  | "rejected"; // Sender rejected the rider's request
 
 export type ItemCategory =
   | "documents"
@@ -42,6 +46,7 @@ export interface DeliveryRequest {
   id?: string;
   senderId: string;
   commuterId: string | null;
+  requestedBy?: string | null; // Rider who requested (before approval)
   pickupPincode: string;
   pickupDetails: string;
   dropPincode: string;
@@ -56,7 +61,7 @@ export interface DeliveryRequest {
   expiresAt: Timestamp; // Auto-expire after 60 minutes
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  // Location for distance calculation (optional, can be added later)
+  // Location for distance calculation
   pickupLat?: number | null;
   pickupLng?: number | null;
   dropLat?: number | null;

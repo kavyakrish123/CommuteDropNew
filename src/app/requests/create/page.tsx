@@ -13,6 +13,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase/client";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import { geocodePostalCode } from "@/lib/utils/geolocation";
 import Link from "next/link";
 
 const CATEGORIES: { value: ItemCategory; label: string }[] = [
@@ -125,9 +126,19 @@ export default function CreateRequestPage() {
         itemPhotoUrl_final = await uploadImage(itemPhoto);
       }
 
+      // Geocode postal codes to get lat/lng
+      const [pickupLocation, dropLocation] = await Promise.all([
+        geocodePostalCode(data.pickupPincode),
+        geocodePostalCode(data.dropPincode),
+      ]);
+
       const requestId = await createRequest(user.uid, {
         ...data,
         itemPhoto: itemPhotoUrl_final,
+        pickupLat: pickupLocation?.lat || null,
+        pickupLng: pickupLocation?.lng || null,
+        dropLat: dropLocation?.lat || null,
+        dropLng: dropLocation?.lng || null,
       });
 
       showToast("Request created successfully!", "success");

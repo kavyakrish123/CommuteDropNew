@@ -6,21 +6,27 @@ import { useRouter, useParams } from "next/navigation";
 import { DeliveryRequest } from "@/lib/types";
 import {
   getRequest,
-  acceptRequest,
+  requestToDeliver,
+  approveRiderRequest,
+  rejectRiderRequest,
   verifyPickupOTP,
   verifyDropOTP,
+  initiatePickupOTP,
+  startTransit,
 } from "@/lib/firestore/requests";
-import { getUser } from "@/lib/firestore/users";
+import { getUser, User } from "@/lib/firestore/users";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ParcelTimeline } from "@/components/ui/ParcelTimeline";
 import { MapLinkButton } from "@/components/ui/MapLinkButton";
+import { CountdownTimer } from "@/components/ui/CountdownTimer";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { otpVerificationSchema } from "@/lib/validation/schemas";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import Link from "next/link";
-import { initiatePickupOTP, startTransit } from "@/lib/firestore/requests";
+import { ChatWindow } from "@/components/chat/ChatWindow";
+import { RiderProfileCard } from "@/components/ui/RiderProfileCard";
 
 export default function RequestDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -32,8 +38,10 @@ export default function RequestDetailPage() {
   const [request, setRequest] = useState<DeliveryRequest | null>(null);
   const [senderName, setSenderName] = useState<string>("");
   const [commuterName, setCommuterName] = useState<string>("");
+  const [requestedRider, setRequestedRider] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOTPs, setShowOTPs] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const [otpType, setOtpType] = useState<"pickup" | "drop" | null>(null);
 
   const otpForm = useForm<{ otp: string }>({
@@ -73,6 +81,18 @@ export default function RequestDetailPage() {
         const commuter = await getUser(req.commuterId);
         setCommuterName(commuter?.name || "Unknown");
       }
+
+      // Load requested rider if status is "requested"
+      if (req.status === "requested" && req.requestedBy) {
+        const rider = await getUser(req.requestedBy);
+        setRequestedRider(rider);
+      }
+
+      // Load requested rider if status is "requested"
+      if (req.status === "requested" && req.requestedBy) {
+        const rider = await getUser(req.requestedBy);
+        setRequestedRider(rider);
+      }
     } catch (error) {
       console.error("Error loading request:", error);
       showToast("Failed to load request", "error");
@@ -81,20 +101,50 @@ export default function RequestDetailPage() {
     }
   };
 
-  const handleAccept = async () => {
+  const handleRequest = async () => {
     if (!user || !request) return;
 
-    if (!confirm("Are you sure you want to accept this request?")) {
+    if (!confirm("Request to deliver this task? The sender will review your profile before approval.")) {
       return;
     }
 
     try {
-      await acceptRequest(requestId, user.uid);
-      showToast("Request accepted successfully!", "success");
+      await requestToDeliver(requestId, user.uid);
+      showToast("Request sent! Waiting for sender approval.", "success");
       loadRequest();
     } catch (error) {
-      console.error("Error accepting request:", error);
-      showToast("Failed to accept request", "error");
+      console.error("Error requesting task:", error);
+      showToast("Failed to request task", "error");
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!request) return;
+
+    try {
+      await approveRiderRequest(requestId);
+      showToast("Rider approved! They can now proceed with pickup.", "success");
+      loadRequest();
+    } catch (error) {
+      console.error("Error approving rider:", error);
+      showToast("Failed to approve rider", "error");
+    }
+  };
+
+  const handleReject = async () => {
+    if (!request) return;
+
+    if (!confirm("Are you sure you want to reject this rider's request?")) {
+      return;
+    }
+
+    try {
+      await rejectRiderRequest(requestId);
+      showToast("Rider request rejected.", "success");
+      loadRequest();
+    } catch (error) {
+      console.error("Error rejecting rider:", error);
+      showToast("Failed to reject rider", "error");
     }
   };
 
@@ -137,11 +187,16 @@ export default function RequestDetailPage() {
 
   const isSender = request.senderId === user.uid;
   const isCommuter = request.commuterId === user.uid;
-  const canAccept = !isSender && request.status === "created";
-  const canPickup = isCommuter && (request.status === "accepted" || request.status === "waiting_pickup");
-  const canVerifyPickupOTP = isCommuter && request.status === "pickup_otp_pending";
+  const isRequestedBy = request.requestedBy === user.uid;
+  const canRequest = !isSender && request.status === "created";
+  const canApprove = isSender && request.status === "requested" && requestedRider;
+  const canPickup = isCommuter && request.status === "approved";
+  const canVerifyPickupOTP = isCommuter && request.status === "waiting_pickup";
   const canStartTransit = isCommuter && request.status === "picked";
   const canDeliver = isCommuter && request.status === "in_transit";
+  // Chat only available from approved status until completed (not before approval)
+  const canChat = (isSender && request.commuterId) || isCommuter;
+  const chatAvailable = canChat && ["approved", "waiting_pickup", "picked", "in_transit", "delivered"].includes(request.status);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -166,8 +221,13 @@ export default function RequestDetailPage() {
 
         <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
           {/* Status */}
-          <div className="flex justify-between items-center">
-            <StatusBadge status={request.status} />
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <StatusBadge status={request.status} />
+              {request.status === "created" && request.expiresAt && (
+                <CountdownTimer expiresAt={request.expiresAt} />
+              )}
+            </div>
             {isSender && (
               <button
                 onClick={() => setShowOTPs(!showOTPs)}
@@ -276,38 +336,72 @@ export default function RequestDetailPage() {
             </div>
           )}
 
+          {/* Rider Request Card (for sender to approve/reject) */}
+          {canApprove && requestedRider && (
+            <div className="pt-4 border-t border-gray-200">
+              <RiderProfileCard
+                rider={requestedRider}
+                onApprove={handleApprove}
+                onReject={handleReject}
+              />
+            </div>
+          )}
+
+          {/* Chat Toggle - Only show when rider is approved */}
+          {chatAvailable && (
+            <div className="pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowChat(!showChat)}
+                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700"
+              >
+                {showChat ? "Hide Chat" : "Open Chat"}
+              </button>
+            </div>
+          )}
+
+          {/* Chat Window - Only visible when rider is approved */}
+          {showChat && chatAvailable && (
+            <div className="pt-4 border-t border-gray-200">
+              <ChatWindow
+                requestId={requestId}
+                otherUserId={isSender ? (request.commuterId || "") : request.senderId}
+                otherUserName={isSender ? commuterName : senderName}
+              />
+            </div>
+          )}
+
           {/* Actions */}
           <div className="space-y-3 pt-4 border-t border-gray-200">
-            {canAccept && (
+            {canRequest && (
               <button
-                onClick={handleAccept}
+                onClick={handleRequest}
                 className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700"
               >
-                Accept this Request
+                Request to Deliver
               </button>
             )}
 
-            {canPickup && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">
-                  Ready to pick up? Request OTP from sender:
-                </p>
-                <button
-                  onClick={async () => {
-                    try {
-                      await initiatePickupOTP(requestId);
-                      showToast("OTP verification initiated. Ask sender for OTP.", "success");
-                      loadRequest();
-                    } catch (error) {
-                      showToast("Failed to initiate OTP", "error");
-                    }
-                  }}
-                  className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700"
-                >
-                  Request Pickup OTP
-                </button>
-              </div>
-            )}
+                    {canPickup && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-gray-700">
+                          Ready to pick up? Request OTP from sender:
+                        </p>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await initiatePickupOTP(requestId);
+                              showToast("OTP verification initiated. Ask sender for OTP via chat.", "success");
+                              loadRequest();
+                            } catch (error) {
+                              showToast("Failed to initiate OTP", "error");
+                            }
+                          }}
+                          className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700"
+                        >
+                          Request Pickup OTP
+                        </button>
+                      </div>
+                    )}
 
             {canVerifyPickupOTP && (
               <div className="space-y-2">

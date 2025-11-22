@@ -8,9 +8,9 @@ interface ParcelTimelineProps {
 
 const STATUS_STEPS: Array<{ status: RequestStatus; label: string; description: string }> = [
   { status: "created", label: "Created", description: "Request posted" },
-  { status: "accepted", label: "Accepted", description: "Rider accepted" },
+  { status: "requested", label: "Requested", description: "Rider requested" },
+  { status: "approved", label: "Approved", description: "Sender approved" },
   { status: "waiting_pickup", label: "Waiting Pickup", description: "Rider en route" },
-  { status: "pickup_otp_pending", label: "Pickup OTP Pending", description: "Verify OTP" },
   { status: "picked", label: "Picked", description: "Item collected" },
   { status: "in_transit", label: "In Transit", description: "On the way" },
   { status: "delivered", label: "Delivered", description: "OTP verified" },
