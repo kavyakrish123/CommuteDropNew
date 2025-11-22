@@ -1,4 +1,5 @@
 module.exports = {
+  root: true, // Don't look for parent configs
   env: {
     es6: true,
     node: true,
@@ -12,6 +13,8 @@ module.exports = {
     'prefer-arrow-callback': 'error',
     'quotes': ['error', 'single', { allowTemplateLiterals: true }],
     'max-len': ['error', { code: 120 }],
+    'require-jsdoc': 'off',
+    'valid-jsdoc': 'off',
   },
   overrides: [
     {

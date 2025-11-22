@@ -1,8 +1,18 @@
-const functions = require('firebase-functions');
+const {onCall} = require('firebase-functions/v2/https');
+const {onDocumentUpdated, onDocumentCreated} = require('firebase-functions/v2/firestore');
+const {onSchedule} = require('firebase-functions/v2/scheduler');
+const {setGlobalOptions} = require('firebase-functions/v2');
+const {HttpsError} = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
 const db = admin.firestore();
+
+// Set global options for all functions
+setGlobalOptions({
+  region: 'asia-southeast1', // Singapore region
+  maxInstances: 10,
+});
 
 // Helper function to calculate distance between two coordinates (Haversine formula)
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -20,19 +30,21 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 }
 
 // Send notification to a user via FCM
-exports.sendNotification = functions.https.onCall(async (data, context) => {
+exports.sendNotification = onCall(async (request) => {
   // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!request.auth) {
+    throw new HttpsError(
       'unauthenticated',
       'User must be authenticated'
     );
   }
 
-  const { userId, fcmToken, title, body, data: notificationData } = data;
+  const data = request.data;
+
+  const {userId, fcmToken, title, body, data: notificationData} = data;
 
   if (!fcmToken || !title || !body) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       'Missing required fields: fcmToken, title, body'
     );
@@ -70,10 +82,10 @@ exports.sendNotification = functions.https.onCall(async (data, context) => {
   try {
     const response = await admin.messaging().send(message);
     console.log('Successfully sent notification:', response);
-    return { success: true, messageId: response };
+    return {success: true, messageId: response};
   } catch (error) {
     console.error('Error sending notification:', error);
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'internal',
       'Failed to send notification: ' + error.message
     );
@@ -81,12 +93,15 @@ exports.sendNotification = functions.https.onCall(async (data, context) => {
 });
 
 // Trigger notification when request status changes to "picked"
-exports.onRequestPicked = functions.firestore
-  .document('requests/{requestId}')
-  .onUpdate(async (change, context) => {
+exports.onRequestPicked = onDocumentUpdated(
+  'requests/{requestId}',
+  async (event) => {
+    const change = event.data;
+    if (!change) return null;
+    
     const before = change.before.data();
     const after = change.after.data();
-    const requestId = context.params.requestId;
+    const requestId = event.params.requestId;
 
     // Check if status changed to "picked"
     if (before.status !== 'picked' && after.status === 'picked') {
@@ -160,12 +175,15 @@ exports.onRequestPicked = functions.firestore
   });
 
 // Trigger notification when request status changes to "delivered"
-exports.onRequestDelivered = functions.firestore
-  .document('requests/{requestId}')
-  .onUpdate(async (change, context) => {
+exports.onRequestDelivered = onDocumentUpdated(
+  'requests/{requestId}',
+  async (event) => {
+    const change = event.data;
+    if (!change) return null;
+    
     const before = change.before.data();
     const after = change.after.data();
-    const requestId = context.params.requestId;
+    const requestId = event.params.requestId;
 
     // Check if status changed to "delivered"
     if (before.status !== 'delivered' && after.status === 'delivered') {
@@ -239,10 +257,12 @@ exports.onRequestDelivered = functions.firestore
   });
 
 // Scheduled function to check for nearby tasks and notify users
-exports.checkNearbyTasks = functions.pubsub
-  .schedule('every 5 minutes')
-  .timeZone('Asia/Singapore')
-  .onRun(async (context) => {
+exports.checkNearbyTasks = onSchedule(
+  {
+    schedule: 'every 5 minutes',
+    timeZone: 'Asia/Singapore',
+  },
+  async (event) => {
     console.log('Checking for nearby tasks...');
 
     try {
@@ -340,11 +360,14 @@ exports.checkNearbyTasks = functions.pubsub
   });
 
 // Trigger notification when a new request is created (notify nearby commuters)
-exports.onNewRequestCreated = functions.firestore
-  .document('requests/{requestId}')
-  .onCreate(async (snap, context) => {
+exports.onNewRequestCreated = onDocumentCreated(
+  'requests/{requestId}',
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return null;
+    
     const request = snap.data();
-    const requestId = context.params.requestId;
+    const requestId = event.params.requestId;
 
     // Only notify if request has location data
     if (!request.pickupLat || !request.pickupLng) {
