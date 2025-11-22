@@ -3,6 +3,7 @@ import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getMessaging, getToken, Messaging, onMessage } from "firebase/messaging";
+import { getFunctions, Functions } from "firebase/functions";
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -37,6 +38,9 @@ export const getMessagingInstance = (): Messaging | null => {
     return null;
   }
 };
+
+// Initialize Functions
+export const functions: Functions = getFunctions(app);
 
 export default app;
 

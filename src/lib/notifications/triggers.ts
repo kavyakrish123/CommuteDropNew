@@ -3,6 +3,8 @@
 import { DeliveryRequest, RequestStatus } from "@/lib/types";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "@/lib/firebase/client";
 
 // Calculate distance between two coordinates (Haversine formula)
 function calculateDistance(
@@ -24,9 +26,7 @@ function calculateDistance(
   return R * c;
 }
 
-// Send notification via Firebase Cloud Functions or directly via FCM
-// Note: In production, you should use Cloud Functions to send notifications
-// This is a client-side helper that would trigger a Cloud Function
+// Send notification via Firebase Cloud Functions
 export async function sendNotificationToUser(
   userId: string,
   title: string,
@@ -50,22 +50,28 @@ export async function sendNotificationToUser(
       return;
     }
 
-    // In production, call a Cloud Function here
-    // For now, we'll log it - you'll need to set up a Cloud Function
-    console.log("Would send notification:", {
-      userId,
-      fcmToken,
-      title,
-      body,
-      data,
-    });
-
-    // TODO: Call Cloud Function to send notification
-    // Example:
-    // await fetch('/api/send-notification', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ userId, fcmToken, title, body, data })
-    // });
+    // Call Cloud Function to send notification
+    try {
+      const sendNotification = httpsCallable(functions, "sendNotification");
+      await sendNotification({
+        userId,
+        fcmToken,
+        title,
+        body,
+        data: data || {},
+      });
+      console.log("Notification sent successfully");
+    } catch (functionError: any) {
+      console.error("Error calling Cloud Function:", functionError);
+      // Fallback: log the notification (for development)
+      console.log("Would send notification:", {
+        userId,
+        fcmToken,
+        title,
+        body,
+        data,
+      });
+    }
   } catch (error) {
     console.error("Error sending notification:", error);
   }
