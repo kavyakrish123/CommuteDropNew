@@ -20,6 +20,7 @@ import {
   subscribeToAvailableRequests,
   subscribeToRiderActiveTasks,
 } from "@/lib/firestore/requests";
+import { MobileMenu } from "@/components/ui/MobileMenu";
 
 export default function RiderDashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -33,6 +34,7 @@ export default function RiderDashboardPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const { toasts, showToast, removeToast } = useToast();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -356,6 +358,7 @@ export default function RiderDashboardPage() {
         </div>
       </main>
 
+      <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );

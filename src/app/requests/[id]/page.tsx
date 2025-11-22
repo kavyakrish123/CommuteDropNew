@@ -32,6 +32,8 @@ import { RequestDetailSkeleton } from "@/components/ui/SkeletonLoader";
 import { subscribeToRequest } from "@/lib/firestore/requests";
 import { notifyPickupEvent, notifyDropEvent } from "@/lib/notifications/triggers";
 import { useNotifications } from "@/hooks/useNotifications";
+import { RatingModal } from "@/components/ui/RatingModal";
+import { submitRating, hasUserRated } from "@/lib/firestore/ratings";
 
 export default function RequestDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -47,6 +49,9 @@ export default function RequestDetailPage() {
   const [requestedRider, setRequestedRider] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOTPs, setShowOTPs] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [hasRated, setHasRated] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   // Chat temporarily disabled
   // const [showChat, setShowChat] = useState(false);
   const [otpType, setOtpType] = useState<"pickup" | "drop" | null>(null);
@@ -106,6 +111,26 @@ export default function RequestDetailPage() {
 
     return () => unsubscribe();
   }, [user, requestId, router, showToast]);
+
+  // Check if user has rated when request is completed
+  useEffect(() => {
+    if (request && user && request.status === "completed") {
+      hasUserRated(requestId, user.uid)
+        .then((rated) => {
+          setHasRated(rated);
+          // Auto-show rating modal if not rated yet (only once)
+          if (!rated && !showRatingModal) {
+            // Small delay to let page render first
+            setTimeout(() => {
+              setShowRatingModal(true);
+            }, 1000);
+          }
+        })
+        .catch((error) => {
+          console.error("Error checking rating status:", error);
+        });
+    }
+  }, [request, user, requestId, showRatingModal]);
 
   const handleRequest = async () => {
     if (!user || !request) return;
@@ -549,6 +574,51 @@ export default function RequestDetailPage() {
         ) : null}
       </main>
 
+      {/* Rating Modal */}
+      {request && user && request.status === "completed" && (
+        <>
+          {!hasRated && (
+            <div className="fixed bottom-6 left-4 right-4 z-40 md:left-auto md:right-6 md:w-80">
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+                <p className="text-sm font-medium text-gray-900 mb-2">
+                  Rate your experience
+                </p>
+                <p className="text-xs text-gray-600 mb-3">
+                  Help build trust in the community by rating this {isSender ? "rider" : "sender"}
+                </p>
+                <button
+                  onClick={() => setShowRatingModal(true)}
+                  className="w-full bg-indigo-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-indigo-700 active:bg-indigo-800 transition-colors"
+                >
+                  Rate Now
+                </button>
+              </div>
+            </div>
+          )}
+          <RatingModal
+            isOpen={showRatingModal}
+            onClose={() => setShowRatingModal(false)}
+            onRate={async (rating, comment) => {
+              if (!request || !user) return;
+              const ratedUserId = isSender ? request.commuterId : request.senderId;
+              if (!ratedUserId) throw new Error("User to rate not found");
+              
+              await submitRating(
+                requestId,
+                user.uid,
+                ratedUserId,
+                rating,
+                comment
+              );
+              setHasRated(true);
+            }}
+            userName={isSender ? commuterName : senderName}
+            userRole={isSender ? "commuter" : "sender"}
+          />
+        </>
+      )}
+
+      <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );

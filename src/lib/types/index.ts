@@ -71,5 +71,10 @@ export interface DeliveryRequest {
   pickupLng?: number | null;
   dropLat?: number | null;
   dropLng?: number | null;
+  // Ratings
+  senderRating?: number | null; // Rating given by sender to commuter
+  commuterRating?: number | null; // Rating given by commuter to sender
+  senderRatingComment?: string | null;
+  commuterRatingComment?: string | null;
 }
 

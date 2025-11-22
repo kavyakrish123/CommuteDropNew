@@ -25,6 +25,7 @@ import {
   subscribeToAvailableRequests,
   subscribeToRiderActiveTasks,
 } from "@/lib/firestore/requests";
+import { MobileMenu } from "@/components/ui/MobileMenu";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -40,6 +41,7 @@ export default function DashboardPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const { toasts, showToast, removeToast } = useToast();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -198,10 +200,13 @@ export default function DashboardPage() {
             <span className="text-gray-900">Drop</span>
           </h1>
           <button
-            onClick={signOut}
-            className="text-sm text-gray-600 active:text-gray-900 py-1 px-2 rounded-lg active:bg-gray-100 transition-colors duration-150"
+            onClick={() => setMenuOpen(true)}
+            className="p-2 text-gray-600 hover:text-gray-900 active:bg-gray-100 rounded-lg transition-colors duration-150"
+            aria-label="Open menu"
           >
-            Logout
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
         </div>
       </header>
@@ -459,6 +464,7 @@ export default function DashboardPage() {
         +
       </button>
 
+      <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
