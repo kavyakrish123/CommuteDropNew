@@ -34,6 +34,7 @@ import { notifyPickupEvent, notifyDropEvent } from "@/lib/notifications/triggers
 import { useNotifications } from "@/hooks/useNotifications";
 import { RatingModal } from "@/components/ui/RatingModal";
 import { submitRating, hasUserRated } from "@/lib/firestore/ratings";
+import { MobileMenu } from "@/components/ui/MobileMenu";
 
 export default function RequestDetailPage() {
   const { user, loading: authLoading } = useAuth();
