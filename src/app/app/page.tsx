@@ -44,9 +44,31 @@ export default function DashboardPage() {
         const requests = await getAvailableRequests(user.uid);
         setAvailableRequests(requests);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading requests:", error);
-      showToast("Failed to load requests", "error");
+      if (error?.code === "permission-denied" || error?.message?.includes("permission")) {
+        showToast("Permission denied. Please check Firestore security rules.", "error");
+      } else if (error?.code === "failed-precondition" || error?.message?.includes("index")) {
+        // Extract the index creation URL from the error message or error object
+        const indexUrl = error?.indexUrl || error?.message?.match(/https:\/\/[^\s\)]+/)?.[0];
+        if (indexUrl) {
+          console.error("🔗 Create Firestore index here:", indexUrl);
+          showToast(
+            "Firestore index required. Check console for link, then refresh after creating.",
+            "error"
+          );
+          // Optionally open the link automatically
+          setTimeout(() => {
+            if (confirm("Open Firestore index creation page?\n\nAfter creating, wait 1-2 minutes for it to build, then refresh.")) {
+              window.open(indexUrl, "_blank");
+            }
+          }, 1500);
+        } else {
+          showToast("Firestore index required. Check console for details.", "error");
+        }
+      } else {
+        showToast("Failed to load requests. " + (error?.message || ""), "error");
+      }
     } finally {
       setLoading(false);
     }

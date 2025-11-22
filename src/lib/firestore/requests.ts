@@ -73,20 +73,39 @@ export async function getMyRequests(senderId: string): Promise<DeliveryRequest[]
 export async function getAvailableRequests(
   currentUserId: string
 ): Promise<DeliveryRequest[]> {
+  // Note: This query requires a composite index in Firestore
+  // If you get an error, Firebase will provide a link to create the index
   const q = query(
     collection(db, "requests"),
     where("status", "==", "open"),
     where("senderId", "!=", currentUserId)
   );
-  const querySnapshot = await getDocs(q);
-
-  return querySnapshot.docs.map(
-    (doc) =>
-      ({
-        id: doc.id,
-        ...doc.data(),
-      } as DeliveryRequest)
-  );
+  
+  try {
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        } as DeliveryRequest)
+    );
+  } catch (error: any) {
+    // If index error, extract and log the index creation URL
+    if (error?.code === "failed-precondition" || error?.message?.includes("index")) {
+      const indexUrlMatch = error?.message?.match(/https:\/\/[^\s\)]+/);
+      if (indexUrlMatch) {
+        console.error("🔗 Create Firestore index here:", indexUrlMatch[0]);
+        // Store URL in error for easy access
+        error.indexUrl = indexUrlMatch[0];
+      } else {
+        console.error(
+          "Firestore index required. Check the error message above for the index creation link."
+        );
+      }
+    }
+    throw error;
+  }
 }
 
 export async function acceptRequest(

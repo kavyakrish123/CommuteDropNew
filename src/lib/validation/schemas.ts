@@ -9,8 +9,21 @@ export const emailPasswordSchema = z.object({
 export const phoneAuthSchema = z.object({
   phone: z
     .string()
-    .min(10, "Phone number must be at least 10 digits")
-    .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
+    .min(1, "Phone number is required")
+    .refine(
+      (val) => {
+        const trimmed = val.trim();
+        // If starts with +, validate as full international number
+        if (trimmed.startsWith("+")) {
+          return /^\+[1-9]\d{8,14}$/.test(trimmed);
+        }
+        // Otherwise, validate as local number (8-15 digits, will be combined with +65)
+        return /^\d{8,15}$/.test(trimmed);
+      },
+      {
+        message: "Enter 8-15 digits (or full number with country code starting with +)",
+      }
+    ),
 });
 
 export const otpSchema = z.object({

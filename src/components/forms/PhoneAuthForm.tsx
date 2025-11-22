@@ -28,40 +28,118 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
 
   const phoneForm = useForm<{ phone: string }>({
     resolver: zodResolver(phoneAuthSchema),
+    defaultValues: {
+      phone: "",
+    },
   });
 
   const otpForm = useForm<{ otp: string }>({
     resolver: zodResolver(otpSchema),
   });
 
+  // Cleanup effect - only runs on unmount
   useEffect(() => {
-    // Initialize reCAPTCHA
-    if (typeof window !== "undefined" && !recaptchaVerifierRef.current) {
-      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, "recaptcha-container", {
-        size: "invisible",
-        callback: () => {
-          // reCAPTCHA solved
-        },
-        "expired-callback": () => {
-          onError("reCAPTCHA expired. Please try again.");
-        },
-      });
-    }
-
     return () => {
+      // Safely cleanup recaptcha verifier on unmount
       if (recaptchaVerifierRef.current) {
-        recaptchaVerifierRef.current.clear();
+        try {
+          const verifier = recaptchaVerifierRef.current;
+          if (verifier && typeof verifier.clear === "function") {
+            verifier.clear();
+          }
+        } catch (error) {
+          // Ignore errors during cleanup
+          console.warn("Error clearing reCAPTCHA verifier:", error);
+        } finally {
+          recaptchaVerifierRef.current = null;
+        }
+      }
+      // Clear the container
+      const container = document.getElementById("recaptcha-container");
+      if (container) {
+        container.innerHTML = "";
       }
     };
-  }, [onError]);
+  }, []);
 
   const sendOTP = async (data: { phone: string }) => {
     try {
       setLoading(true);
-      const phoneNumber = data.phone.startsWith("+") ? data.phone : `+${data.phone}`;
+      // Combine country code with phone number
+      // If user entered full number with country code, use it; otherwise prepend +65
+      let phoneNumber = data.phone.trim();
+      
+      if (phoneNumber.startsWith("+")) {
+        // User included country code
+        phoneNumber = phoneNumber;
+      } else {
+        // Default to +65 (Singapore) if no country code
+        phoneNumber = `+65${phoneNumber}`;
+      }
 
+      // Validate the combined phone number
+      if (phoneNumber.length < 10 || !/^\+[1-9]\d{1,14}$/.test(phoneNumber)) {
+        throw new Error("Invalid phone number format");
+      }
+
+      // Initialize recaptcha only when needed (lazy initialization)
+      // This prevents CORS issues when port changes
       if (!recaptchaVerifierRef.current) {
-        throw new Error("reCAPTCHA not initialized");
+        // Clear any existing reCAPTCHA scripts and state
+        // This fixes CORS issues when port changes
+        const existingScripts = document.querySelectorAll('script[src*="recaptcha"]');
+        existingScripts.forEach((script) => script.remove());
+        
+        // Clear any existing grecaptcha from window
+        if (typeof window !== "undefined" && (window as any).grecaptcha) {
+          try {
+            (window as any).grecaptcha = undefined;
+          } catch (e) {
+            // Ignore
+          }
+        }
+
+        // Ensure container exists
+        let container = document.getElementById("recaptcha-container");
+        if (!container) {
+          // Create container if it doesn't exist
+          container = document.createElement("div");
+          container.id = "recaptcha-container";
+          document.body.appendChild(container);
+        } else {
+          // Clear any existing content
+          container.innerHTML = "";
+        }
+
+        try {
+          recaptchaVerifierRef.current = new RecaptchaVerifier(auth, "recaptcha-container", {
+            size: "invisible",
+            callback: () => {
+              // reCAPTCHA solved
+            },
+            "expired-callback": () => {
+              onError("reCAPTCHA expired. Please try again.");
+            },
+          });
+        } catch (error: any) {
+          console.error("reCAPTCHA initialization error:", error);
+          // Clear any partial initialization
+          if (recaptchaVerifierRef.current) {
+            try {
+              recaptchaVerifierRef.current.clear();
+            } catch (e) {
+              // Ignore
+            }
+            recaptchaVerifierRef.current = null;
+          }
+          // Clear container
+          if (container) {
+            container.innerHTML = "";
+          }
+          throw new Error(
+            "Failed to initialize reCAPTCHA. Please refresh the page and try again."
+          );
+        }
       }
 
       const confirmation = await signInWithPhoneNumber(
@@ -74,6 +152,15 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
       setStep("otp");
     } catch (error: any) {
       console.error("Error sending OTP:", error);
+      // Reset recaptcha on error so it can be re-initialized
+      if (recaptchaVerifierRef.current) {
+        try {
+          recaptchaVerifierRef.current.clear();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+        recaptchaVerifierRef.current = null;
+      }
       onError(error.message || "Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
@@ -167,6 +254,17 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
             type="tel"
             placeholder="91234567"
             className="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            onInput={(e) => {
+              // Remove any non-digit characters except + at the start
+              const value = (e.target as HTMLInputElement).value;
+              if (value.startsWith("+")) {
+                // Allow + and digits
+                (e.target as HTMLInputElement).value = value.replace(/[^\d+]/g, "");
+              } else {
+                // Only digits if no +
+                (e.target as HTMLInputElement).value = value.replace(/\D/g, "");
+              }
+            }}
           />
         </div>
         {phoneForm.formState.errors.phone && (
@@ -175,7 +273,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
           </p>
         )}
         <p className="mt-1 text-xs text-gray-500">
-          Include country code if different from +65
+          Enter 8 digits for Singapore (+65), or include full number with country code
         </p>
       </div>
       <button
