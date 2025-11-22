@@ -11,6 +11,7 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { MobileMenu } from "@/components/ui/MobileMenu";
 import { useNotifications } from "@/hooks/useNotifications";
+import { requestNotificationPermission } from "@/lib/notifications/fcm";
 
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -19,7 +20,7 @@ export default function SettingsPage() {
   const [userData, setUserData] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isEnabled: notificationsEnabled, requestPermission } = useNotifications();
+  const { isEnabled: notificationsEnabled } = useNotifications();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -51,7 +52,7 @@ export default function SettingsPage() {
       setUserData((prev) => prev ? { ...prev, notificationEnabled: enabled } : null);
       
       if (enabled) {
-        await requestPermission();
+        await requestNotificationPermission();
         showToast("Notifications enabled", "success");
       } else {
         showToast("Notifications disabled", "success");
