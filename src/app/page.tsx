@@ -14,7 +14,7 @@ export default function Home() {
         <PlatformDisclaimer />
         <Link
           href="/auth"
-          className="inline-block bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg"
+          className="inline-block bg-indigo-600 text-white px-8 py-3.5 rounded-xl text-base font-semibold hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.98] transition-all duration-150 shadow-md"
         >
           Get started →
         </Link>

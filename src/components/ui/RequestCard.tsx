@@ -27,7 +27,7 @@ export function RequestCard({
   const isMyTask = currentUserId && request.commuterId === currentUserId;
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full min-h-[420px] max-h-[500px]">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full min-h-[420px] max-h-[500px] active:scale-[0.98] transition-transform duration-150">
       {/* Header - Fixed height */}
       <div className="flex justify-between items-start mb-3 px-4 pt-4 flex-shrink-0">
         <div className="flex items-center gap-1.5 flex-wrap min-h-[28px] flex-1">
@@ -100,7 +100,7 @@ export function RequestCard({
           {request.id && (
             <Link
               href={`/requests/${request.id}`}
-              className="flex-1 text-center bg-indigo-600 text-white py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors min-h-[40px] flex items-center justify-center"
+              className="flex-1 text-center bg-indigo-600 text-white py-2.5 px-4 rounded-xl text-sm font-medium hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.98] transition-all duration-150 min-h-[44px] flex items-center justify-center"
             >
               View
             </Link>
@@ -108,7 +108,7 @@ export function RequestCard({
           {showActions && onAccept && request.status === "created" && (
             <button
               onClick={onAccept}
-              className="flex-1 bg-green-600 text-white py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors min-h-[40px]"
+              className="flex-1 bg-green-600 text-white py-2.5 px-4 rounded-xl text-sm font-medium hover:bg-green-700 active:bg-green-800 active:scale-[0.98] transition-all duration-150 min-h-[44px]"
             >
               Request to Deliver
             </button>
@@ -116,7 +116,7 @@ export function RequestCard({
           {onCancel && request.status === "created" && (
             <button
               onClick={onCancel}
-              className="bg-red-600 text-white py-2.5 px-3 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors min-h-[40px] whitespace-nowrap"
+              className="bg-red-600 text-white py-2.5 px-3 rounded-xl text-sm font-medium hover:bg-red-700 active:bg-red-800 active:scale-[0.98] transition-all duration-150 min-h-[44px] whitespace-nowrap"
               title="Cancel this request"
             >
               Cancel

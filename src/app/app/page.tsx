@@ -172,50 +172,55 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">CommuteDrop</h1>
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+          <h1 className="text-xl font-semibold text-gray-900">CommuteDrop</h1>
           <button
             onClick={signOut}
-            className="text-sm text-gray-600 hover:text-gray-900"
+            className="text-sm text-gray-600 active:text-gray-900 py-1 px-2 rounded-lg active:bg-gray-100 transition-colors duration-150"
           >
             Logout
           </button>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6 pb-24">
+      <main className="max-w-4xl mx-auto px-4 py-4 pb-24">
         {/* Tabs - Unified Dashboard */}
-        <div className="flex border-b border-gray-200 mb-6">
+        <div className="flex border-b border-gray-200 mb-4 -mx-4 px-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab("my-requests")}
-            className={`flex-1 py-3 text-center font-medium ${
+            className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
               activeTab === "my-requests"
                 ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
+                : "text-gray-500 active:text-gray-700"
             }`}
           >
             My Requests ({myRequests.length})
+            {requestedTasks.length > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-semibold leading-none text-white bg-red-500 rounded-full">
+                {requestedTasks.length}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab("my-tasks")}
-            className={`flex-1 py-3 text-center font-medium ${
+            className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
               activeTab === "my-tasks"
                 ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
+                : "text-gray-500 active:text-gray-700"
             }`}
           >
-            My Active Tasks ({myActiveTasks.length})
+            My Tasks ({myActiveTasks.length})
           </button>
           <button
             onClick={() => setActiveTab("available")}
-            className={`flex-1 py-3 text-center font-medium ${
+            className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
               activeTab === "available"
                 ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
+                : "text-gray-500 active:text-gray-700"
             }`}
           >
-            Available Tasks
+            Available
           </button>
         </div>
 
@@ -247,7 +252,7 @@ export default function DashboardPage() {
                         setLocationError("Location access denied. Please enable location in your browser settings.");
                       }
                     }}
-                    className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
+                    className="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.98] transition-all duration-150 text-sm font-medium"
                   >
                     Use My Location
                   </button>
@@ -273,7 +278,7 @@ export default function DashboardPage() {
                   const value = e.target.value.replace(/\D/g, '').slice(0, 6);
                   setSearchPincode(value);
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-base"
               />
               {searchPincode && (
                 <button
@@ -289,7 +294,7 @@ export default function DashboardPage() {
 
         {/* Active Tasks Info */}
         {activeTab === "my-tasks" && myActiveTasks.length > 0 && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p className="text-sm text-blue-800">
               <strong>Active Task:</strong> Complete your current pickup before accepting a new task.
             </p>
@@ -305,7 +310,7 @@ export default function DashboardPage() {
 
         {/* Ethical Warning */}
         {activeTab === "my-requests" && (
-          <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded">
+          <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded-xl">
             <div className="flex">
               <div className="ml-3">
                 <p className="text-sm text-red-700">
@@ -326,7 +331,7 @@ export default function DashboardPage() {
                   <p>No requests yet. Create your first request!</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
                   {myRequests.map((request) =>
                     request.id ? (
                       <RequestCard 
@@ -359,7 +364,7 @@ export default function DashboardPage() {
                   <p>No active tasks. Request a task from the Available Tasks tab.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
                   {myActiveTasks.map((task) =>
                     task.id ? (
                       <RequestCard key={task.id} request={task} currentUserId={user.uid} />
@@ -385,7 +390,7 @@ export default function DashboardPage() {
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
                   {availableRequests.map((request) =>
                     request.id ? (
                       <RequestCard
@@ -407,7 +412,7 @@ export default function DashboardPage() {
       {/* Floating Action Button - Mobile optimized */}
       <Link
         href="/requests/create"
-        className="fixed bottom-6 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-indigo-700 transition-colors z-50"
+        className="fixed bottom-6 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-md hover:bg-indigo-700 active:bg-indigo-800 active:scale-95 transition-all duration-150 z-50"
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         +

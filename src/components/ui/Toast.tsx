@@ -31,14 +31,14 @@ export function Toast({
       : "bg-blue-500";
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top">
+    <div className="fixed top-4 right-4 z-50 transform transition-all duration-300 ease-out animate-in fade-in slide-in-from-top-2">
       <div
-        className={`${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2`}
+        className={`${bgColor} text-white px-4 py-2.5 rounded-xl shadow-md flex items-center gap-2 max-w-sm`}
       >
-        <span>{message}</span>
+        <span className="text-sm">{message}</span>
         <button
           onClick={onClose}
-          className="ml-2 hover:opacity-80"
+          className="ml-2 active:opacity-70 transition-opacity duration-150"
           aria-label="Close"
         >
           ×
