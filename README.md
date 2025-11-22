@@ -4,7 +4,7 @@
 
 ## Features
 
-- 🔐 **Dual Authentication**: Phone authentication (production) and Email/Password (dev mode)
+- 🔐 **Phone Authentication**: Secure phone number authentication with OTP verification
 - 📦 **Request Management**: Create, view, and manage delivery requests
 - 🚗 **Commuter Matching**: Browse and accept available delivery requests
 - 🔢 **OTP Verification**: Secure pickup and drop confirmation using 4-digit OTPs
