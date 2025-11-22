@@ -2,6 +2,7 @@ import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
+import { getMessaging, getToken, Messaging, onMessage } from "firebase/messaging";
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -25,6 +26,17 @@ if (getApps().length === 0) {
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
+
+// Initialize messaging (only in browser, not SSR)
+export const getMessagingInstance = (): Messaging | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    return getMessaging(app);
+  } catch (error) {
+    console.warn("Firebase Messaging not available:", error);
+    return null;
+  }
+};
 
 export default app;
 

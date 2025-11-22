@@ -5,6 +5,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Grab-like color scheme */
+  --grab-green: #00B14F;
+  --grab-green-dark: #009640;
+  --grab-green-light: #E6F7ED;
+  --grab-orange: #FF6B35;
+  --grab-gray: #F5F5F5;
+  --grab-text: #1A1A1A;
+  --grab-text-light: #666666;
 }
 
 @media (prefers-color-scheme: dark) {

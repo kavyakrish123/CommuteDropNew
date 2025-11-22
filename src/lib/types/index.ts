@@ -2,6 +2,8 @@ import { Timestamp } from "firebase/firestore";
 
 export type UserRole = "sender" | "commuter" | "both";
 
+export type CommuteType = "mrt" | "bus" | "both" | "other";
+
 export interface User {
   phone: string | null;
   email: string | null;
@@ -14,6 +16,9 @@ export interface User {
   onboardingCompleted: boolean;
   rating?: number | null; // Average rating (1-5)
   totalDeliveries?: number; // Total completed deliveries
+  commuteType?: CommuteType; // MRT, Bus, Both, or Other
+  fcmToken?: string | null; // Firebase Cloud Messaging token for push notifications
+  notificationEnabled?: boolean; // Whether user wants nearby task notifications
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

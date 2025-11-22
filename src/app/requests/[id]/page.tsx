@@ -30,6 +30,8 @@ import Link from "next/link";
 import { RiderProfileCard } from "@/components/ui/RiderProfileCard";
 import { RequestDetailSkeleton } from "@/components/ui/SkeletonLoader";
 import { subscribeToRequest } from "@/lib/firestore/requests";
+import { notifyPickupEvent, notifyDropEvent } from "@/lib/notifications/triggers";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export default function RequestDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -37,6 +39,7 @@ export default function RequestDetailPage() {
   const params = useParams();
   const requestId = params.id as string;
   const { toasts, showToast, removeToast } = useToast();
+  const { isEnabled: notificationsEnabled } = useNotifications();
 
   const [request, setRequest] = useState<DeliveryRequest | null>(null);
   const [senderName, setSenderName] = useState<string>("");
@@ -166,6 +169,21 @@ export default function RequestDetailPage() {
         showToast("OTP verified successfully!", "success");
         otpForm.reset();
         setOtpType(null);
+        
+        // Send notification
+        if (notificationsEnabled && user && request) {
+          if (otpType === "pickup") {
+            await notifyPickupEvent(request, user.uid);
+            if (request.commuterId) {
+              await notifyPickupEvent(request, request.commuterId);
+            }
+          } else if (otpType === "drop") {
+            await notifyDropEvent(request, user.uid);
+            if (request.senderId) {
+              await notifyDropEvent(request, request.senderId);
+            }
+          }
+        }
         // Real-time listener will update automatically
       } else {
         showToast("Invalid OTP. Please check and try again.", "error");

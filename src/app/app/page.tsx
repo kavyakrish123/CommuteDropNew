@@ -194,7 +194,10 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-xl font-semibold text-gray-900">CommuteDrop</h1>
+          <h1 className="text-xl font-bold text-gray-900">
+            <span className="text-[#00B14F]">Commute</span>
+            <span className="text-gray-900">Drop</span>
+          </h1>
           <button
             onClick={signOut}
             className="text-sm text-gray-600 active:text-gray-900 py-1 px-2 rounded-lg active:bg-gray-100 transition-colors duration-150"

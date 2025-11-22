@@ -2,6 +2,7 @@
 
 import { User } from "@/lib/types";
 import Image from "next/image";
+import { CommuteBadge } from "./CommuteBadge";
 
 interface RiderProfileCardProps {
   rider: User;
@@ -28,7 +29,10 @@ export function RiderProfileCard({ rider, onApprove, onReject }: RiderProfileCar
           </div>
         )}
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900">{rider.name}</h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-lg font-semibold text-gray-900">{rider.name}</h3>
+            <CommuteBadge commuteType={rider.commuteType} size="sm" />
+          </div>
           {rider.bio && <p className="text-sm text-gray-600 mt-1">{rider.bio}</p>}
           
           <div className="mt-3 flex items-center gap-4">

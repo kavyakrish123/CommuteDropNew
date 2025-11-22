@@ -13,6 +13,7 @@ import { z } from "zod";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import Link from "next/link";
+import { CommuteType } from "@/lib/types";
 
 
 export default function OnboardingPage() {
@@ -24,6 +25,7 @@ export default function OnboardingPage() {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [payNowQR, setPayNowQR] = useState<File | null>(null);
   const [payNowQRUrl, setPayNowQRUrl] = useState<string | null>(null);
+  const [commuteType, setCommuteType] = useState<CommuteType>("other");
   const [uploading, setUploading] = useState(false);
 
   const form = useForm<{ name: string; bio: string }>({
@@ -128,6 +130,7 @@ export default function OnboardingPage() {
           bio: data.bio,
           profileImage: profileImageUrl_final,
           payNowQR: payNowQRUrl_final,
+          commuteType: commuteType,
           onboardingCompleted: true,
           updatedAt: serverTimestamp(),
         },
@@ -252,6 +255,37 @@ export default function OnboardingPage() {
                     {form.formState.errors.bio.message}
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  How do you commute? (Singapore)
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: "mrt" as CommuteType, label: "🚇 MRT", icon: "🚇" },
+                    { value: "bus" as CommuteType, label: "🚌 Bus", icon: "🚌" },
+                    { value: "both" as CommuteType, label: "🚇🚌 Both", icon: "🚇🚌" },
+                    { value: "other" as CommuteType, label: "Other", icon: "🚗" },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setCommuteType(option.value)}
+                      className={`p-4 rounded-xl border-2 transition-all ${
+                        commuteType === option.value
+                          ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">{option.icon}</div>
+                      <div className="text-sm font-medium">{option.label}</div>
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  This helps match you with nearby delivery tasks
+                </p>
               </div>
 
               <div className="flex gap-4">
