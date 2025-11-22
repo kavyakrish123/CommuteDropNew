@@ -294,7 +294,7 @@ export default function DashboardPage() {
               <strong>Active Task:</strong> Complete your current pickup before accepting a new task.
             </p>
             {myActiveTasks.some(
-              (t) => t.status === "pickup_otp_pending" || t.status === "waiting_pickup" || t.status === "accepted"
+              (t) => t.status === "pickup_otp_pending" || t.status === "waiting_pickup" || t.status === "approved"
             ) && (
               <p className="text-sm text-orange-800 mt-1">
                 ⚠️ You have a task waiting for pickup. Go to the pickup location and verify OTP before accepting new tasks.
