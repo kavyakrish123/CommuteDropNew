@@ -12,12 +12,15 @@ import {
 } from "@/lib/firestore/requests";
 import { getUser } from "@/lib/firestore/users";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { ParcelTimeline } from "@/components/ui/ParcelTimeline";
+import { MapLinkButton } from "@/components/ui/MapLinkButton";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { otpVerificationSchema } from "@/lib/validation/schemas";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import Link from "next/link";
+import { initiatePickupOTP, startTransit } from "@/lib/firestore/requests";
 
 export default function RequestDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -134,9 +137,11 @@ export default function RequestDetailPage() {
 
   const isSender = request.senderId === user.uid;
   const isCommuter = request.commuterId === user.uid;
-  const canAccept = !isSender && request.status === "open";
-  const canPickup = isCommuter && request.status === "accepted";
-  const canDeliver = isCommuter && request.status === "picked";
+  const canAccept = !isSender && request.status === "created";
+  const canPickup = isCommuter && (request.status === "accepted" || request.status === "waiting_pickup");
+  const canVerifyPickupOTP = isCommuter && request.status === "pickup_otp_pending";
+  const canStartTransit = isCommuter && request.status === "picked";
+  const canDeliver = isCommuter && request.status === "in_transit";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -153,7 +158,12 @@ export default function RequestDetailPage() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {/* Timeline */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <ParcelTimeline status={request.status} />
+        </div>
+
         <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
           {/* Status */}
           <div className="flex justify-between items-center">
@@ -188,22 +198,52 @@ export default function RequestDetailPage() {
 
           {/* Pickup */}
           <div>
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Pickup</h3>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-sm font-medium text-gray-600">Pickup Location</h3>
+              <MapLinkButton
+                pincode={request.pickupPincode}
+                details={request.pickupDetails}
+                type="pickup"
+              />
+            </div>
             <p className="font-semibold text-lg">{request.pickupPincode}</p>
-            <p className="text-gray-700">{request.pickupDetails}</p>
+            {request.pickupDetails && (
+              <p className="text-gray-700 text-sm">{request.pickupDetails}</p>
+            )}
           </div>
 
           {/* Drop */}
           <div>
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Drop</h3>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-sm font-medium text-gray-600">Drop Location</h3>
+              <MapLinkButton
+                pincode={request.dropPincode}
+                details={request.dropDetails}
+                type="drop"
+              />
+            </div>
             <p className="font-semibold text-lg">{request.dropPincode}</p>
-            <p className="text-gray-700">{request.dropDetails}</p>
+            {request.dropDetails && (
+              <p className="text-gray-700 text-sm">{request.dropDetails}</p>
+            )}
           </div>
 
           {/* Item */}
           <div>
             <h3 className="text-sm font-medium text-gray-600 mb-1">Item</h3>
-            <p className="text-gray-700">{request.itemDescription}</p>
+            <p className="text-gray-700 mb-2">{request.itemDescription}</p>
+            {request.category && (
+              <span className="inline-block px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded">
+                {request.category}
+              </span>
+            )}
+            {request.itemPhoto && (
+              <img
+                src={request.itemPhoto}
+                alt="Item"
+                className="mt-2 w-full h-48 object-cover rounded-lg"
+              />
+            )}
           </div>
 
           {/* Price */}
@@ -250,7 +290,29 @@ export default function RequestDetailPage() {
             {canPickup && (
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-700">
-                  Enter Pickup OTP:
+                  Ready to pick up? Request OTP from sender:
+                </p>
+                <button
+                  onClick={async () => {
+                    try {
+                      await initiatePickupOTP(requestId);
+                      showToast("OTP verification initiated. Ask sender for OTP.", "success");
+                      loadRequest();
+                    } catch (error) {
+                      showToast("Failed to initiate OTP", "error");
+                    }
+                  }}
+                  className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700"
+                >
+                  Request Pickup OTP
+                </button>
+              </div>
+            )}
+
+            {canVerifyPickupOTP && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700">
+                  Enter Pickup OTP (from sender):
                 </p>
                 <form
                   onSubmit={(e) => {
@@ -279,6 +341,23 @@ export default function RequestDetailPage() {
                   </p>
                 )}
               </div>
+            )}
+
+            {canStartTransit && (
+              <button
+                onClick={async () => {
+                  try {
+                    await startTransit(requestId);
+                    showToast("Started transit", "success");
+                    loadRequest();
+                  } catch (error) {
+                    showToast("Failed to start transit", "error");
+                  }
+                }}
+                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700"
+              >
+                Start Delivery
+              </button>
             )}
 
             {canDeliver && (

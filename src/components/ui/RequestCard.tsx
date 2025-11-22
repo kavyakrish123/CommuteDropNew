@@ -26,21 +26,35 @@ export function RequestCard({
       </div>
 
       <div className="space-y-2 mb-3">
+        {request.itemPhoto && (
+          <img
+            src={request.itemPhoto}
+            alt="Item"
+            className="w-full h-32 object-cover rounded-lg mb-2"
+          />
+        )}
         <div>
           <p className="text-sm text-gray-600">Pickup</p>
           <p className="font-medium">
-            {request.pickupPincode} - {request.pickupDetails}
+            {request.pickupPincode}
+            {request.pickupDetails && ` - ${request.pickupDetails}`}
           </p>
         </div>
         <div>
           <p className="text-sm text-gray-600">Drop</p>
           <p className="font-medium">
-            {request.dropPincode} - {request.dropDetails}
+            {request.dropPincode}
+            {request.dropDetails && ` - ${request.dropDetails}`}
           </p>
         </div>
         <div>
           <p className="text-sm text-gray-600">Item</p>
           <p className="font-medium">{request.itemDescription}</p>
+          {request.category && (
+            <span className="inline-block mt-1 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded">
+              {request.category}
+            </span>
+          )}
         </div>
         {request.priceOffered && (
           <div>
@@ -60,7 +74,7 @@ export function RequestCard({
             View
           </Link>
         )}
-        {showActions && onAccept && request.status === "open" && (
+        {showActions && onAccept && request.status === "created" && (
           <button
             onClick={onAccept}
             className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-green-700"

@@ -1,0 +1,224 @@
+You are an expert full-stack product engineer inside Cursor, specializing in UX improvements, functional flows, and high-trust user interactions.
+
+Your task:
+Improve the UI/UX, workflows, validations, restriction logic, and safety rules for this MVP peer-to-peer parcel delivery platform.
+
+This requires changes to:
+
+UI screens
+
+User journeys
+
+Data validation
+
+Permissions logic
+
+State transitions
+
+Policies + onboarding UX
+
+Task lifecycle
+
+Task restrictions
+
+Rider limitations
+
+🔥 CORE ISSUES TO FIX
+SIGNUP ISSUES
+
+Fix signup flow:
+
+User must view Policies & Usage Rules
+
+Add Agree checkbox before account creation
+
+Redirect to onboarding profile setup:
+
+Name
+
+Profile image upload
+
+Short bio
+
+OPTIONAL: PayNow QR upload (can be edited later)
+
+TASK CREATION ISSUES
+
+Fix flow:
+
+Allow upload of item photo
+
+Add category selection
+
+Ban restricted categories (e.g., cigarettes, alcohol, food)
+
+Show SG compliance warning
+
+Tasks auto-expire if not accepted in 60 minutes
+
+RIDER FLOW ISSUES
+
+Fix immediately:
+
+Rider dashboard must show accepted/pending tasks
+
+Rider must be able to track status
+
+Rider cannot accept next task until:
+
+OTP verified for current pickup
+
+AND must be holding < 3 active pickups max
+
+DISTANCE / SORTING
+
+Implement:
+
+Filter tasks by proximity
+
+Default radius: 1 km
+
+Tasks sorted by nearest first
+
+OTP FLOW FIX
+
+Flow must be:
+
+Sender gives OTP
+
+Rider verifies OTP
+
+System transitions to "picked up" only after verification
+
+Then allow new task pickup eligibility
+
+ROUTE ACTION UX
+
+When clicking pickup or dropoff → open external maps app (Google Maps / Apple Maps)
+
+Not internal maps
+
+PARCEL FLOW VISUALISATION
+
+Add:
+
+parcel journey timeline UI
+
+statuses:
+
+Created
+
+Accepted
+
+Waiting Pickup
+
+Pickup OTP Pending
+
+Picked
+
+In Transit
+
+Delivered
+
+Completed
+
+PLATFORM POSITIONING MANDATORY IN UX
+
+Display clearly:
+
+Peer-to-peer marketplace model
+
+Not a logistics company
+
+No illegal items
+
+Not responsible for disputes
+
+No platform-handled payments
+
+PRIVACY MODEL
+
+Pickup/dropoff should show:
+
+Postal code only + optional detail
+for privacy reasons
+
+REQUIRED NEW SCREENS
+
+Must create/update:
+
+Terms & Policies screen
+
+Signup screen with agreements checkbox
+
+Profile onboarding setup
+
+Task creation wizard
+
+Rider dashboard with active tasks
+
+Parcel progress page
+
+OTP verification page
+
+PayNow QR upload page
+
+Sorted nearby tasks listing
+
+REQUIRED VALIDATION RULES
+
+must accept policies before signup
+
+must complete onboarding before using app
+
+disallow prohibited categories
+
+1-hour expiry for unaccepted tasks
+
+max 3 active pickups per rider
+
+block next pickup until OTP success
+
+REQUIRED IMPROVED UX PRINCIPLES
+
+clean
+
+minimal
+
+intuitive
+
+low cognitive load
+
+high safety and clarity
+
+friction where required for trust
+
+OUTPUT FORMAT
+
+Return to me:
+
+Complete revised UX flow
+
+Updated screen list
+
+Navigation changes
+
+Components required
+
+API changes required
+
+DB field changes required
+
+Validation rules per step
+
+State transition improvements
+
+Edge cases to handle
+
+Testing items list
+
+Final UX diagram (can be ASCII)
+
+Be extremely detailed.
+
+(END PROMPT)

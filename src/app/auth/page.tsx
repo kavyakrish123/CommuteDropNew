@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { PhoneAuthForm } from "@/components/forms/PhoneAuthForm";
 import { EmailAuthForm } from "@/components/forms/EmailAuthForm";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -17,6 +18,12 @@ export default function AuthPage() {
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900">CommuteDrop</h1>
             <p className="text-gray-600 mt-2">Sign in to continue</p>
+            <Link
+              href="/terms"
+              className="text-sm text-indigo-600 hover:text-indigo-700 mt-2 inline-block"
+            >
+              View Terms & Policies
+            </Link>
           </div>
 
           {/* Tabs */}

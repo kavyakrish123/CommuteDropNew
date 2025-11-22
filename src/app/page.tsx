@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PlatformDisclaimer } from "@/components/ui/PlatformDisclaimer";
 
 export default function Home() {
   return (
@@ -10,6 +11,7 @@ export default function Home() {
             Deliver on the way. Send or carry items along your commute.
           </p>
         </div>
+        <PlatformDisclaimer />
         <Link
           href="/auth"
           className="inline-block bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg"

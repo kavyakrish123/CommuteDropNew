@@ -1,3 +1,5 @@
+"use client";
+
 import { z } from "zod";
 
 // Email/Password auth schemas
@@ -34,6 +36,16 @@ export const otpSchema = z.object({
 });
 
 export const createRequestSchema = z.object({
+  itemDescription: z
+    .string()
+    .min(10, "Item description must be at least 10 characters")
+    .max(500, "Item description too long"),
+  category: z.enum(
+    ["documents", "electronics", "clothing", "books", "personal_items", "other"],
+    {
+      required_error: "Please select a category",
+    }
+  ),
   pickupPincode: z
     .string()
     .min(5, "Pincode must be at least 5 digits")
@@ -41,16 +53,17 @@ export const createRequestSchema = z.object({
     .regex(/^\d+$/, "Pincode must contain only numbers"),
   pickupDetails: z
     .string()
-    .min(5, "Pickup details must be at least 5 characters"),
+    .min(5, "Pickup details must be at least 5 characters")
+    .max(200, "Pickup details too long"),
   dropPincode: z
     .string()
     .min(5, "Pincode must be at least 5 digits")
     .max(6, "Pincode must be at most 6 digits")
     .regex(/^\d+$/, "Pincode must contain only numbers"),
-  dropDetails: z.string().min(5, "Drop details must be at least 5 characters"),
-  itemDescription: z
+  dropDetails: z
     .string()
-    .min(5, "Item description must be at least 5 characters"),
+    .min(5, "Drop details must be at least 5 characters")
+    .max(200, "Drop details too long"),
   priceOffered: z
     .number()
     .positive("Price must be positive")

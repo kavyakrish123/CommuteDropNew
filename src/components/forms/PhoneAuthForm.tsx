@@ -185,13 +185,16 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
           email: null,
           name: user.displayName || `User ${user.uid.slice(0, 6)}`,
           role: "both",
+          policiesAccepted: true, // User must have viewed terms before reaching here
+          onboardingCompleted: false, // Will be set after onboarding
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         },
         { merge: true }
       );
 
-      router.push("/app");
+      // Redirect to onboarding if not completed
+      router.push("/onboarding");
     } catch (error: any) {
       console.error("Error verifying OTP:", error);
       onError("Invalid OTP. Please check and try again.");

@@ -7,6 +7,8 @@ import {
   signOut as firebaseSignOut,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase/client";
+import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 interface AuthContextType {
@@ -27,13 +29,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      
+      if (user) {
+        // Check onboarding status for protected routes
+        const currentPath = window.location.pathname;
+        const publicRoutes = ["/", "/auth", "/terms", "/onboarding"];
+        if (!publicRoutes.includes(currentPath)) {
+          try {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            const userData = userDoc.data();
+            
+            if (!userData?.onboardingCompleted && currentPath !== "/onboarding") {
+              router.push("/onboarding");
+            }
+          } catch (error) {
+            console.error("Error checking user data:", error);
+          }
+        }
+      }
+      
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   const signOut = async () => {
     await firebaseSignOut(auth);

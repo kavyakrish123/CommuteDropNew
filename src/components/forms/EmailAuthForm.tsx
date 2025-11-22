@@ -10,7 +10,7 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useRouter } from "next/navigation";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 
 interface EmailAuthFormProps {
@@ -47,11 +47,16 @@ export function EmailAuthForm({ onError }: EmailAuthFormProps) {
             email: user.email,
             name: user.email?.split("@")[0] || `User ${user.uid.slice(0, 6)}`,
             role: "both",
+            policiesAccepted: true,
+            onboardingCompleted: false,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           },
           { merge: true }
         );
+        // New users go to onboarding
+        router.push("/onboarding");
+        return;
       } else {
         const result = await signInWithEmailAndPassword(
           auth,
@@ -59,6 +64,13 @@ export function EmailAuthForm({ onError }: EmailAuthFormProps) {
           data.password
         );
         user = result.user;
+        // Existing users: check if onboarding completed
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const userData = userDoc.data();
+        if (!userData?.onboardingCompleted) {
+          router.push("/onboarding");
+          return;
+        }
       }
 
       router.push("/app");
