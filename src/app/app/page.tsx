@@ -17,7 +17,6 @@ import {
 } from "@/lib/firestore/requests";
 import { RequestCard } from "@/components/ui/RequestCard";
 import { sortByDistance, getCurrentLocation } from "@/lib/utils/geolocation";
-import Link from "next/link";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { DashboardSkeleton, RequestCardSkeleton } from "@/components/ui/SkeletonLoader";
@@ -451,13 +450,14 @@ export default function DashboardPage() {
       </main>
 
       {/* Floating Action Button - Mobile optimized */}
-      <Link
-        href="/requests/create"
+      <button
+        onClick={() => router.push("/requests/create")}
         className="fixed bottom-6 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-md hover:bg-indigo-700 active:bg-indigo-800 active:scale-95 transition-all duration-150 z-50"
         style={{ WebkitTapHighlightColor: 'transparent' }}
+        aria-label="Create new request"
       >
         +
-      </Link>
+      </button>
 
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
