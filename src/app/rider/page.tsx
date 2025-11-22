@@ -135,18 +135,14 @@ export default function RiderDashboardPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6">
-        {/* Tabs */}
+        {/* Navigation Tabs */}
         <div className="flex border-b border-gray-200 mb-6">
-          <button
-            onClick={() => setActiveTab("available")}
-            className={`flex-1 py-3 text-center font-medium ${
-              activeTab === "available"
-                ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+          <Link
+            href="/app"
+            className="flex-1 py-3 text-center font-medium text-gray-500 hover:text-gray-700"
           >
-            Available Tasks
-          </button>
+            My Requests
+          </Link>
           <button
             onClick={() => setActiveTab("active")}
             className={`flex-1 py-3 text-center font-medium ${
@@ -156,6 +152,16 @@ export default function RiderDashboardPage() {
             }`}
           >
             My Active Tasks ({activeTasks.length}/3)
+          </button>
+          <button
+            onClick={() => setActiveTab("available")}
+            className={`flex-1 py-3 text-center font-medium ${
+              activeTab === "available"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Available Tasks
           </button>
         </div>
 
@@ -231,6 +237,7 @@ export default function RiderDashboardPage() {
                     request={request}
                     showActions
                     onAccept={() => request.id && handleAccept(request.id)}
+                    currentUserId={user.uid}
                   />
                 ) : null
               )
@@ -242,7 +249,7 @@ export default function RiderDashboardPage() {
           ) : (
             activeTasks.map((task) =>
               task.id ? (
-                <RequestCard key={task.id} request={task} />
+                <RequestCard key={task.id} request={task} currentUserId={user.uid} />
               ) : null
             )
           )}

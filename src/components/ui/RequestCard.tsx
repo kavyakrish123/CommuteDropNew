@@ -7,21 +7,38 @@ interface RequestCardProps {
   request: DeliveryRequest;
   showActions?: boolean;
   onAccept?: () => void;
+  currentUserId?: string;
 }
 
 export function RequestCard({
   request,
   showActions = false,
   onAccept,
+  currentUserId,
 }: RequestCardProps) {
   const createdAt = request.createdAt
     ? format(request.createdAt.toDate(), "MMM d, yyyy")
     : "Unknown";
 
+  const isMyRequest = currentUserId && request.senderId === currentUserId;
+  const isMyTask = currentUserId && request.commuterId === currentUserId;
+
   return (
     <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
       <div className="flex justify-between items-start mb-2">
-        <StatusBadge status={request.status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={request.status} />
+          {isMyRequest && (
+            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
+              Your Request
+            </span>
+          )}
+          {isMyTask && (
+            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+              Your Task
+            </span>
+          )}
+        </div>
         <span className="text-xs text-gray-500">{createdAt}</span>
       </div>
 
