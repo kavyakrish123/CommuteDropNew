@@ -6,53 +6,65 @@ interface ParcelTimelineProps {
   status: RequestStatus;
 }
 
-const STATUS_STEPS: Array<{ status: RequestStatus; label: string; description: string }> = [
-  { status: "created", label: "Created", description: "Request posted" },
-  { status: "requested", label: "Requested", description: "Rider requested" },
-  { status: "approved", label: "Approved", description: "Sender approved" },
-  { status: "waiting_pickup", label: "Waiting Pickup", description: "Rider en route" },
-  { status: "picked", label: "Picked", description: "Item collected" },
-  { status: "in_transit", label: "In Transit", description: "On the way" },
-  { status: "delivered", label: "Delivered", description: "OTP verified" },
-  { status: "completed", label: "Completed", description: "Delivery complete" },
+// Simplified steps - only key milestones
+const STATUS_STEPS: Array<{ status: RequestStatus; label: string }> = [
+  { status: "created", label: "Created" },
+  { status: "approved", label: "Approved" },
+  { status: "picked", label: "Picked" },
+  { status: "delivered", label: "Delivered" },
+  { status: "completed", label: "Completed" },
 ];
 
+// Map all statuses to their step index
+const getStepIndex = (status: RequestStatus): number => {
+  if (status === "created") return 0;
+  if (status === "requested") return 0; // Still at created step
+  if (status === "approved" || status === "waiting_pickup" || status === "pickup_otp_pending") return 1;
+  if (status === "picked") return 2;
+  if (status === "in_transit") return 2; // Still at picked step
+  if (status === "delivered") return 3;
+  if (status === "completed") return 4;
+  return 0;
+};
+
 export function ParcelTimeline({ status }: ParcelTimelineProps) {
-  const currentStepIndex = STATUS_STEPS.findIndex((s) => s.status === status);
+  const currentStepIndex = getStepIndex(status);
   const isCompleted = status === "completed" || status === "cancelled" || status === "expired";
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Parcel Journey</h3>
+    <div className="py-2">
       <div className="relative">
-        {/* Timeline line */}
-        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+        {/* Horizontal line */}
+        <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200"></div>
         <div
-          className="absolute left-4 top-0 w-0.5 bg-indigo-600 transition-all duration-300"
+          className="absolute top-4 left-0 h-0.5 bg-indigo-600 transition-all duration-300"
           style={{
-            height: `${(currentStepIndex / (STATUS_STEPS.length - 1)) * 100}%`,
+            width: `${(currentStepIndex / (STATUS_STEPS.length - 1)) * 100)}%`,
           }}
         ></div>
 
-        {/* Status steps */}
-        <div className="space-y-6">
+        {/* Status dots */}
+        <div className="relative flex justify-between items-center">
           {STATUS_STEPS.map((step, index) => {
-            const isActive = index <= currentStepIndex;
+            const isPast = index < currentStepIndex;
             const isCurrent = index === currentStepIndex;
+            const isFuture = index > currentStepIndex;
 
             return (
-              <div key={step.status} className="relative flex items-start gap-4">
+              <div key={step.status} className="flex flex-col items-center gap-1 flex-1">
                 {/* Status dot */}
                 <div
-                  className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center ${
-                    isActive
-                      ? "bg-indigo-600 text-white"
+                  className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                    isPast
+                      ? "bg-gray-400 text-white"
+                      : isCurrent
+                      ? "bg-indigo-600 text-white ring-2 ring-indigo-200"
                       : "bg-gray-200 text-gray-400"
                   }`}
                 >
-                  {isActive ? (
+                  {isPast ? (
                     <svg
-                      className="w-5 h-5"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -60,30 +72,25 @@ export function ParcelTimeline({ status }: ParcelTimelineProps) {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
+                        strokeWidth={3}
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
                   ) : (
-                    <div className="w-2 h-2 rounded-full bg-current"></div>
+                    <div className={`w-2 h-2 rounded-full ${isCurrent ? "bg-white" : "bg-current"}`}></div>
                   )}
                 </div>
-
-                {/* Status content */}
-                <div className="flex-1 pt-1">
-                  <div
-                    className={`font-medium ${
-                      isActive ? "text-gray-900" : "text-gray-400"
-                    }`}
-                  >
-                    {step.label}
-                  </div>
-                  <div className="text-sm text-gray-600">{step.description}</div>
-                  {isCurrent && !isCompleted && (
-                    <div className="mt-1 text-xs text-indigo-600 font-medium">
-                      Current Status
-                    </div>
-                  )}
+                {/* Label */}
+                <div
+                  className={`text-xs font-medium text-center ${
+                    isCurrent
+                      ? "text-indigo-600"
+                      : isPast
+                      ? "text-gray-500"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {step.label}
                 </div>
               </div>
             );

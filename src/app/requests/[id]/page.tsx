@@ -217,8 +217,8 @@ export default function RequestDetailPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Timeline */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        {/* Timeline - Compact horizontal */}
+        <div className="bg-white rounded-lg shadow-sm p-4">
           <ParcelTimeline status={request.status} />
         </div>
 
