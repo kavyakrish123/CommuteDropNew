@@ -455,13 +455,15 @@ export function subscribeToMyRequests(
   return onSnapshot(
     q,
     (querySnapshot) => {
-      const requests = querySnapshot.docs.map(
-        (doc) =>
-          ({
-            id: doc.id,
-            ...doc.data(),
-          } as DeliveryRequest)
-      );
+      const requests = querySnapshot.docs
+        .map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            } as DeliveryRequest)
+        )
+        .filter((req) => req.status !== "completed" && req.status !== "cancelled" && req.status !== "expired"); // Exclude completed/cancelled/expired from dashboard
       callback(requests);
     },
     (error) => {
@@ -560,5 +562,92 @@ export function subscribeToRiderActiveTasks(
       }
     }
   );
+}
+
+// Subscribe to completed requests for history
+export function subscribeToCompletedRequests(
+  userId: string,
+  callback: (requests: DeliveryRequest[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  // Get requests where user is either sender or commuter and status is completed
+  const senderQuery = query(
+    collection(db, "requests"),
+    where("senderId", "==", userId),
+    where("status", "==", "completed")
+  );
+  
+  const commuterQuery = query(
+    collection(db, "requests"),
+    where("commuterId", "==", userId),
+    where("status", "==", "completed")
+  );
+  
+  let senderUnsubscribe: (() => void) | null = null;
+  let commuterUnsubscribe: (() => void) | null = null;
+  const allRequests: DeliveryRequest[] = [];
+  
+  const updateCallback = () => {
+    // Remove duplicates by ID
+    const unique = allRequests.filter((req, index, self) => 
+      index === self.findIndex((r) => r.id === req.id)
+    );
+    callback(unique);
+  };
+  
+  senderUnsubscribe = onSnapshot(
+    senderQuery,
+    (querySnapshot) => {
+      const senderRequests = querySnapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          } as DeliveryRequest)
+      );
+      
+      // Remove old sender requests and add new ones
+      const filtered = allRequests.filter((req) => req.senderId !== userId || req.status !== "completed");
+      allRequests.length = 0;
+      allRequests.push(...filtered, ...senderRequests);
+      updateCallback();
+    },
+    (error) => {
+      console.error("Error subscribing to completed sender requests:", error);
+      if (onError) {
+        onError(error);
+      }
+    }
+  );
+  
+  commuterUnsubscribe = onSnapshot(
+    commuterQuery,
+    (querySnapshot) => {
+      const commuterRequests = querySnapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          } as DeliveryRequest)
+      );
+      
+      // Remove old commuter requests and add new ones
+      const senderRequests = allRequests.filter((req) => req.senderId === userId && req.status === "completed");
+      allRequests.length = 0;
+      allRequests.push(...senderRequests, ...commuterRequests);
+      updateCallback();
+    },
+    (error) => {
+      console.error("Error subscribing to completed commuter requests:", error);
+      if (onError) {
+        onError(error);
+      }
+    }
+  );
+  
+  return () => {
+    if (senderUnsubscribe) senderUnsubscribe();
+    if (commuterUnsubscribe) commuterUnsubscribe();
+  };
 }
 

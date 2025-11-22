@@ -166,6 +166,19 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               </svg>
               <span className="font-medium text-gray-900">Rider Dashboard</span>
             </Link>
+
+            <div className="border-t border-gray-200 my-2" />
+
+            <Link
+              href="/history"
+              onClick={onClose}
+              className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
+            >
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-medium text-gray-900">History</span>
+            </Link>
           </nav>
         </div>
 
