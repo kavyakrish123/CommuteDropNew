@@ -30,6 +30,11 @@ const getStepIndex = (status: RequestStatus): number => {
 export function ParcelTimeline({ status }: ParcelTimelineProps) {
   const currentStepIndex = getStepIndex(status);
   const isCompleted = status === "completed" || status === "cancelled" || status === "expired";
+  
+  // Calculate progress width
+  const progressWidth = STATUS_STEPS.length > 1 
+    ? (currentStepIndex / (STATUS_STEPS.length - 1)) * 100 
+    : 0;
 
   return (
     <div className="py-2">
@@ -39,7 +44,7 @@ export function ParcelTimeline({ status }: ParcelTimelineProps) {
         <div
           className="absolute top-4 left-0 h-0.5 bg-indigo-600 transition-all duration-300"
           style={{
-            width: `${(currentStepIndex / (STATUS_STEPS.length - 1)) * 100)}%`,
+            width: `${progressWidth}%`,
           }}
         ></div>
 

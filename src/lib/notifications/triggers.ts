@@ -131,7 +131,7 @@ export async function notifyNearbyTasks(
     const users = usersSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }));
+    })) as Array<{ id: string; fcmToken?: string; notificationEnabled?: boolean }>;
 
     // Get available requests
     const requestsQuery = query(

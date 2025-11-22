@@ -88,7 +88,7 @@ export default function DashboardPage() {
         (requests) => {
           setAllAvailableRequests(requests);
         },
-        (error) => {
+        (error: any) => {
           console.error("Error subscribing to available requests:", error);
           if (error?.code === "failed-precondition" || error?.message?.includes("index")) {
             const indexUrl = error?.indexUrl || error?.message?.match(/https:\/\/[^\s\)]+/)?.[0];

@@ -456,13 +456,13 @@ export function subscribeToAvailableRequests(
         });
       callback(requests);
     },
-    (error) => {
+    (error: any) => {
       console.error("Error subscribing to available requests:", error);
       if (error?.code === "failed-precondition" || error?.message?.includes("index")) {
         const indexUrlMatch = error?.message?.match(/https:\/\/[^\s\)]+/);
         if (indexUrlMatch) {
           console.error("🔗 Create Firestore index here:", indexUrlMatch[0]);
-          error.indexUrl = indexUrlMatch[0];
+          (error as any).indexUrl = indexUrlMatch[0];
         }
       }
       if (onError) {
