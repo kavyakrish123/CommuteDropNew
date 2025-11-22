@@ -59,8 +59,8 @@ export default function EditProfilePage() {
             name: data.name,
             bio: data.bio || "",
           });
-          setProfileImageUrl(data.profileImage);
-          setPayNowQRUrl(data.payNowQR);
+          setProfileImageUrl(data.profileImage ?? null);
+          setPayNowQRUrl(data.payNowQR ?? null);
           setLoading(false);
         })
         .catch((error) => {
