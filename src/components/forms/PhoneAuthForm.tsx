@@ -11,7 +11,7 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useRouter } from "next/navigation";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 
 interface PhoneAuthFormProps {
@@ -177,24 +177,41 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
       const result = await confirmationResult.confirm(data.otp);
       const user = result.user;
 
-      // Create or update user document
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          phone: user.phoneNumber,
-          email: null,
-          name: user.displayName || `User ${user.uid.slice(0, 6)}`,
-          role: "both",
-          policiesAccepted: true, // User must have viewed terms before reaching here
-          onboardingCompleted: false, // Will be set after onboarding
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+      // Check if user document already exists and has completed onboarding
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.data();
+      const hasCompletedOnboarding = userDoc.exists() && userData?.onboardingCompleted === true;
 
-      // Redirect to onboarding if not completed
-      router.push("/onboarding");
+      if (hasCompletedOnboarding) {
+        // Existing user with completed onboarding: only update phone and timestamp
+        await setDoc(
+          userDocRef,
+          {
+            phone: user.phoneNumber,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+        router.push("/app");
+      } else {
+        // New user or user without completed onboarding: create/update with default values
+        await setDoc(
+          userDocRef,
+          {
+            phone: user.phoneNumber,
+            email: null,
+            name: userData?.name || user.displayName || `User ${user.uid.slice(0, 6)}`,
+            role: userData?.role || "both",
+            policiesAccepted: true, // User must have viewed terms before reaching here
+            onboardingCompleted: false, // Will be set after onboarding
+            createdAt: userData?.createdAt || serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+        router.push("/onboarding");
+      }
     } catch (error: any) {
       console.error("Error verifying OTP:", error);
       onError("Invalid OTP. Please check and try again.");
