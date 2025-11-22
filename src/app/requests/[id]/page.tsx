@@ -193,7 +193,7 @@ export default function RequestDetailPage() {
   const canRequest = !isSender && request.status === "created";
   const canApprove = isSender && request.status === "requested" && requestedRider;
   const canPickup = isCommuter && request.status === "approved";
-  const canVerifyPickupOTP = isCommuter && request.status === "waiting_pickup";
+  const canVerifyPickupOTP = isCommuter && (request.status === "waiting_pickup" || request.status === "pickup_otp_pending");
   const canStartTransit = isCommuter && request.status === "picked";
   const canDeliver = isCommuter && request.status === "in_transit";
   // Chat temporarily disabled
