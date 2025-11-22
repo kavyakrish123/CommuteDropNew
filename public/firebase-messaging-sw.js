@@ -5,46 +5,50 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-com
 // Firebase config - will be set via message from main app
 let firebaseApp = null;
 let messaging = null;
+let firebaseConfig = null;
 
-// Setup background message handler
-function setupBackgroundMessageHandler() {
-  if (messaging) {
-    messaging.onBackgroundMessage((payload) => {
-      console.log('[firebase-messaging-sw.js] Received background message ', payload);
-      
-      const notificationTitle = payload.notification?.title || 'CommuteDrop';
-      const notificationOptions = {
-        body: payload.notification?.body || '',
-        icon: '/icon-192x192.png',
-        badge: '/icon-192x192.png',
-        tag: payload.data?.requestId || 'commutedrop',
-        data: payload.data || {},
-        requireInteraction: payload.data?.requireInteraction === 'true',
-        actions: payload.data?.actions ? JSON.parse(payload.data.actions) : [],
-      };
+// Background message handler - must be set up immediately
+function handleBackgroundMessage(payload) {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  
+  const notificationTitle = payload.notification?.title || 'CommuteDrop';
+  const notificationOptions = {
+    body: payload.notification?.body || '',
+    icon: '/icon-192x192.png',
+    badge: '/icon-192x192.png',
+    tag: payload.data?.requestId || 'commutedrop',
+    data: payload.data || {},
+    requireInteraction: payload.data?.requireInteraction === 'true',
+    actions: payload.data?.actions ? JSON.parse(payload.data.actions) : [],
+  };
 
-      self.registration.showNotification(notificationTitle, notificationOptions);
-    });
+  self.registration.showNotification(notificationTitle, notificationOptions);
+}
+
+// Initialize Firebase and set up messaging
+function initializeFirebase(config) {
+  if (firebaseApp || !config || !config.projectId) {
+    return;
+  }
+  
+  try {
+    firebaseApp = firebase.initializeApp(config);
+    messaging = firebase.messaging();
+    firebaseConfig = config;
+    
+    // Set up background message handler immediately
+    messaging.onBackgroundMessage(handleBackgroundMessage);
+    
+    console.log('[firebase-messaging-sw.js] Firebase initialized with config');
+  } catch (error) {
+    console.error('[firebase-messaging-sw.js] Error initializing Firebase:', error);
   }
 }
 
 // Listen for config from main app
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'FIREBASE_CONFIG') {
-    const config = event.data.config;
-    if (config && config.projectId) {
-      try {
-        // Only initialize if not already initialized
-        if (!firebaseApp) {
-          firebaseApp = firebase.initializeApp(config);
-          messaging = firebase.messaging();
-          setupBackgroundMessageHandler();
-          console.log('[firebase-messaging-sw.js] Firebase initialized with config from main app');
-        }
-      } catch (error) {
-        console.error('[firebase-messaging-sw.js] Error initializing Firebase:', error);
-      }
-    }
+    initializeFirebase(event.data.config);
   }
 });
 

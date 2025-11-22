@@ -38,6 +38,8 @@ export default function CreateRequestPage() {
     resolver: zodResolver(createRequestSchema),
     defaultValues: {
       priceOffered: null,
+      pickupDetails: "",
+      dropDetails: "",
     },
   });
 

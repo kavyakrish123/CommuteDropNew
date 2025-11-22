@@ -53,8 +53,8 @@ export const createRequestSchema = z.object({
     .regex(/^\d+$/, "Pincode must contain only numbers"),
   pickupDetails: z
     .string()
-    .min(5, "Pickup details must be at least 5 characters")
-    .max(200, "Pickup details too long"),
+    .max(200, "Pickup details too long")
+    .default(""),
   dropPincode: z
     .string()
     .min(5, "Pincode must be at least 5 digits")
@@ -62,8 +62,8 @@ export const createRequestSchema = z.object({
     .regex(/^\d+$/, "Pincode must contain only numbers"),
   dropDetails: z
     .string()
-    .min(5, "Drop details must be at least 5 characters")
-    .max(200, "Drop details too long"),
+    .max(200, "Drop details too long")
+    .default(""),
   priceOffered: z
     .number()
     .positive("Price must be positive")
