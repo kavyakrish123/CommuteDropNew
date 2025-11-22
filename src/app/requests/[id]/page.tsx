@@ -28,6 +28,8 @@ import Link from "next/link";
 // Chat temporarily disabled
 // import { ChatWindow } from "@/components/chat/ChatWindow";
 import { RiderProfileCard } from "@/components/ui/RiderProfileCard";
+import { RequestDetailSkeleton } from "@/components/ui/SkeletonLoader";
+import { subscribeToRequest } from "@/lib/firestore/requests";
 
 export default function RequestDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -56,52 +58,51 @@ export default function RequestDetailPage() {
     }
   }, [user, authLoading, router]);
 
+  // Real-time subscription to request
   useEffect(() => {
-    if (user && requestId) {
-      loadRequest();
-    }
-  }, [user, requestId]);
+    if (!user || !requestId) return;
 
-  const loadRequest = async () => {
-    try {
-      setLoading(true);
-      const req = await getRequest(requestId);
-      if (!req) {
-        showToast("Request not found", "error");
-        router.push("/app");
-        return;
+    setLoading(true);
+    
+    const unsubscribe = subscribeToRequest(
+      requestId,
+      async (req) => {
+        if (!req) {
+          showToast("Request not found", "error");
+          router.push("/app");
+          return;
+        }
+
+        setRequest(req);
+        setLoading(false);
+
+        // Load sender name
+        const sender = await getUser(req.senderId);
+        setSenderName(sender?.name || "Unknown");
+
+        // Load commuter name if exists
+        if (req.commuterId) {
+          const commuter = await getUser(req.commuterId);
+          setCommuterName(commuter?.name || "Unknown");
+        }
+
+        // Load requested rider if status is "requested"
+        if (req.status === "requested" && req.requestedBy) {
+          const rider = await getUser(req.requestedBy);
+          setRequestedRider(rider);
+        } else {
+          setRequestedRider(null);
+        }
+      },
+      (error) => {
+        console.error("Error loading request:", error);
+        showToast("Failed to load request", "error");
+        setLoading(false);
       }
+    );
 
-      setRequest(req);
-
-      // Load sender name
-      const sender = await getUser(req.senderId);
-      setSenderName(sender?.name || "Unknown");
-
-      // Load commuter name if exists
-      if (req.commuterId) {
-        const commuter = await getUser(req.commuterId);
-        setCommuterName(commuter?.name || "Unknown");
-      }
-
-      // Load requested rider if status is "requested"
-      if (req.status === "requested" && req.requestedBy) {
-        const rider = await getUser(req.requestedBy);
-        setRequestedRider(rider);
-      }
-
-      // Load requested rider if status is "requested"
-      if (req.status === "requested" && req.requestedBy) {
-        const rider = await getUser(req.requestedBy);
-        setRequestedRider(rider);
-      }
-    } catch (error) {
-      console.error("Error loading request:", error);
-      showToast("Failed to load request", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => unsubscribe();
+  }, [user, requestId, router, showToast]);
 
   const handleRequest = async () => {
     if (!user || !request) return;
@@ -113,7 +114,7 @@ export default function RequestDetailPage() {
     try {
       await requestToDeliver(requestId, user.uid);
       showToast("Request sent! Waiting for sender approval.", "success");
-      loadRequest();
+      // Real-time listener will update automatically
     } catch (error) {
       console.error("Error requesting task:", error);
       showToast("Failed to request task", "error");
@@ -126,7 +127,7 @@ export default function RequestDetailPage() {
     try {
       await approveRiderRequest(requestId);
       showToast("Rider approved! They can now proceed with pickup.", "success");
-      loadRequest();
+      // Real-time listener will update automatically
     } catch (error) {
       console.error("Error approving rider:", error);
       showToast("Failed to approve rider", "error");
@@ -143,7 +144,7 @@ export default function RequestDetailPage() {
     try {
       await rejectRiderRequest(requestId);
       showToast("Rider request rejected.", "success");
-      loadRequest();
+      // Real-time listener will update automatically
     } catch (error) {
       console.error("Error rejecting rider:", error);
       showToast("Failed to reject rider", "error");
@@ -165,7 +166,7 @@ export default function RequestDetailPage() {
         showToast("OTP verified successfully!", "success");
         otpForm.reset();
         setOtpType(null);
-        loadRequest();
+        // Real-time listener will update automatically
       } else {
         showToast("Invalid OTP. Please check and try again.", "error");
       }
@@ -175,7 +176,7 @@ export default function RequestDetailPage() {
     }
   };
 
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
@@ -217,10 +218,14 @@ export default function RequestDetailPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Timeline - Compact horizontal */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <ParcelTimeline status={request.status} />
-        </div>
+        {loading && !request ? (
+          <RequestDetailSkeleton />
+        ) : request ? (
+          <>
+            {/* Timeline - Compact horizontal */}
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <ParcelTimeline status={request.status} />
+            </div>
 
         <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
           {/* Status - Prominent display for riders */}
@@ -413,8 +418,8 @@ export default function RequestDetailPage() {
                           onClick={async () => {
                             try {
                               await initiatePickupOTP(requestId);
-                              showToast("OTP verification initiated. Ask sender for OTP via chat.", "success");
-                              loadRequest();
+                              showToast("OTP verification initiated. Ask sender for OTP.", "success");
+                              // Real-time listener will update automatically
                             } catch (error) {
                               showToast("Failed to initiate OTP", "error");
                             }
@@ -471,7 +476,7 @@ export default function RequestDetailPage() {
                   try {
                     await startTransit(requestId);
                     showToast("Started transit", "success");
-                    loadRequest();
+                    // Real-time listener will update automatically
                   } catch (error) {
                     showToast("Failed to start transit", "error");
                   }
@@ -522,6 +527,8 @@ export default function RequestDetailPage() {
             )}
           </div>
         </div>
+          </>
+        ) : null}
       </main>
 
       <ToastContainer toasts={toasts} removeToast={removeToast} />

@@ -20,6 +20,12 @@ import { sortByDistance, getCurrentLocation } from "@/lib/utils/geolocation";
 import Link from "next/link";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import { DashboardSkeleton, RequestCardSkeleton } from "@/components/ui/SkeletonLoader";
+import {
+  subscribeToMyRequests,
+  subscribeToAvailableRequests,
+  subscribeToRiderActiveTasks,
+} from "@/lib/firestore/requests";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -29,7 +35,8 @@ export default function DashboardPage() {
   const [myActiveTasks, setMyActiveTasks] = useState<DeliveryRequest[]>([]);
   const [requestedTasks, setRequestedTasks] = useState<DeliveryRequest[]>([]);
   const [availableRequests, setAvailableRequests] = useState<DeliveryRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allAvailableRequests, setAllAvailableRequests] = useState<DeliveryRequest[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchPincode, setSearchPincode] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -41,11 +48,90 @@ export default function DashboardPage() {
     }
   }, [user, authLoading, router]);
 
+  // Real-time subscriptions
   useEffect(() => {
-    if (user) {
-      loadData();
+    if (!user) return;
+
+    setLoading(true);
+    
+    // Subscribe to my requests (includes both regular requests and requested tasks)
+    const unsubscribeMyRequests = subscribeToMyRequests(
+      user.uid,
+      (requests) => {
+        setMyRequests(requests);
+        const requested = requests.filter((r) => r.status === "requested");
+        setRequestedTasks(requested);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error subscribing to my requests:", error);
+        setLoading(false);
+      }
+    );
+
+    // Subscribe to my active tasks (as rider)
+    const unsubscribeActiveTasks = subscribeToRiderActiveTasks(
+      user.uid,
+      (tasks) => {
+        setMyActiveTasks(tasks);
+      },
+      (error) => {
+        console.error("Error subscribing to active tasks:", error);
+      }
+    );
+
+    // Subscribe to available requests (only when on available tab)
+    let unsubscribeAvailable: (() => void) | null = null;
+    if (activeTab === "available") {
+      unsubscribeAvailable = subscribeToAvailableRequests(
+        user.uid,
+        (requests) => {
+          setAllAvailableRequests(requests);
+        },
+        (error) => {
+          console.error("Error subscribing to available requests:", error);
+          if (error?.code === "failed-precondition" || error?.message?.includes("index")) {
+            const indexUrl = error?.indexUrl || error?.message?.match(/https:\/\/[^\s\)]+/)?.[0];
+            if (indexUrl) {
+              console.error("🔗 Create Firestore index here:", indexUrl);
+              showToast(
+                "Firestore index required. Check console for link, then refresh after creating.",
+                "error"
+              );
+            } else {
+              showToast("Firestore index required. Check console for details.", "error");
+            }
+          }
+        }
+      );
     }
-  }, [user, activeTab, searchPincode, userLocation]); // Added userLocation to dependencies
+
+    return () => {
+      unsubscribeMyRequests();
+      unsubscribeActiveTasks();
+      if (unsubscribeAvailable) unsubscribeAvailable();
+    };
+  }, [user, activeTab, showToast]);
+
+  // Filter and sort available requests when searchPincode or userLocation changes
+  useEffect(() => {
+    if (activeTab === "available") {
+      let filtered = allAvailableRequests;
+      
+      if (searchPincode && searchPincode.trim()) {
+        filtered = allAvailableRequests.filter((req) => {
+          return req.pickupPincode?.includes(searchPincode.trim()) || 
+                 req.dropPincode?.includes(searchPincode.trim());
+        });
+      }
+      
+      if (userLocation) {
+        filtered = sortByDistance(filtered, userLocation.lat, userLocation.lng, 10);
+      }
+      
+      setAvailableRequests(filtered);
+    }
+  }, [allAvailableRequests, searchPincode, userLocation, activeTab]);
 
   // Get user's current location when on available tasks tab
   useEffect(() => {
@@ -66,72 +152,6 @@ export default function DashboardPage() {
     }
   }, [activeTab, userLocation]);
 
-  const loadData = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      
-      // Always load "My Requests" (as sender) and "My Active Tasks" (as rider)
-      const [requests, activeTasks, requested] = await Promise.all([
-        getMyRequests(user.uid),
-        getRiderActiveTasks(user.uid),
-        getRequestedTasks(user.uid),
-      ]);
-      
-      setMyRequests(requests);
-      setMyActiveTasks(activeTasks);
-      setRequestedTasks(requested);
-
-      // Load available tasks only when on that tab
-      if (activeTab === "available") {
-        // Get all available requests (without pincode filter first)
-        const allAvailable = await getAvailableRequests(user.uid);
-        
-        // Apply pincode filter client-side (more flexible)
-        let filteredRequests = allAvailable;
-        if (searchPincode && searchPincode.trim()) {
-          filteredRequests = allAvailable.filter((req) => {
-            return req.pickupPincode?.includes(searchPincode.trim()) || 
-                   req.dropPincode?.includes(searchPincode.trim());
-          });
-        }
-        
-        // Sort by distance if user location is available
-        let sortedRequests = filteredRequests;
-        if (userLocation) {
-          sortedRequests = sortByDistance(
-            filteredRequests,
-            userLocation.lat,
-            userLocation.lng,
-            10 // 10km radius
-          );
-        }
-        
-        setAvailableRequests(sortedRequests);
-      }
-    } catch (error: any) {
-      console.error("Error loading data:", error);
-      if (error?.code === "permission-denied" || error?.message?.includes("permission")) {
-        showToast("Permission denied. Please check Firestore security rules.", "error");
-      } else if (error?.code === "failed-precondition" || error?.message?.includes("index")) {
-        const indexUrl = error?.indexUrl || error?.message?.match(/https:\/\/[^\s\)]+/)?.[0];
-        if (indexUrl) {
-          console.error("🔗 Create Firestore index here:", indexUrl);
-          showToast(
-            "Firestore index required. Check console for link, then refresh after creating.",
-            "error"
-          );
-        } else {
-          showToast("Firestore index required. Check console for details.", "error");
-        }
-      } else {
-        showToast("Failed to load data. " + (error?.message || ""), "error");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRequest = async (requestId: string) => {
     if (!user) return;
@@ -150,14 +170,14 @@ export default function DashboardPage() {
 
       await requestToDeliver(requestId, user.uid);
       showToast("Request sent! Waiting for sender approval.", "success");
-      loadData(); // Reload all data
+      // Real-time listener will update automatically
     } catch (error) {
       console.error("Error requesting task:", error);
       showToast("Failed to request task", "error");
     }
   };
 
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
@@ -247,7 +267,7 @@ export default function DashboardPage() {
                       if (location) {
                         setUserLocation(location);
                         setLocationError(null);
-                        loadData(); // Reload to sort by distance
+                        // Real-time listener will update automatically
                       } else {
                         setLocationError("Location access denied. Please enable location in your browser settings.");
                       }
@@ -326,7 +346,13 @@ export default function DashboardPage() {
         <div>
           {activeTab === "my-requests" && (
             <>
-              {myRequests.length === 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+                  {[1, 2, 3].map((i) => (
+                    <RequestCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : myRequests.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <p>No requests yet. Create your first request!</p>
                 </div>
@@ -343,7 +369,7 @@ export default function DashboardPage() {
                             try {
                               await cancelRequest(request.id!, user.uid);
                               showToast("Request cancelled successfully", "success");
-                              loadData();
+                              // Real-time listener will update automatically
                             } catch (error: any) {
                               showToast(error.message || "Failed to cancel request", "error");
                             }
@@ -359,7 +385,13 @@ export default function DashboardPage() {
 
           {activeTab === "my-tasks" && (
             <>
-              {myActiveTasks.length === 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+                  {[1, 2, 3].map((i) => (
+                    <RequestCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : myActiveTasks.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <p>No active tasks. Request a task from the Available Tasks tab.</p>
                 </div>
@@ -377,7 +409,13 @@ export default function DashboardPage() {
 
           {activeTab === "available" && (
             <>
-              {availableRequests.length === 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+                  {[1, 2, 3, 4].map((i) => (
+                    <RequestCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : availableRequests.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <p>No available tasks at the moment.</p>
                   {searchPincode && (

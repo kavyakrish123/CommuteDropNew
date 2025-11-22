@@ -10,6 +10,8 @@ import {
   serverTimestamp,
   Timestamp,
   Timestamp as FirestoreTimestamp,
+  onSnapshot,
+  Unsubscribe,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { DeliveryRequest, RequestStatus } from "@/lib/types";
@@ -353,5 +355,151 @@ export async function cancelRequest(requestId: string, senderId: string): Promis
     status: "cancelled",
     updatedAt: serverTimestamp(),
   });
+}
+
+// Real-time subscription functions
+export function subscribeToRequest(
+  requestId: string,
+  callback: (request: DeliveryRequest | null) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  const docRef = doc(db, "requests", requestId);
+  
+  return onSnapshot(
+    docRef,
+    (docSnap) => {
+      if (docSnap.exists()) {
+        callback({
+          id: docSnap.id,
+          ...docSnap.data(),
+        } as DeliveryRequest);
+      } else {
+        callback(null);
+      }
+    },
+    (error) => {
+      console.error("Error subscribing to request:", error);
+      if (onError) {
+        onError(error);
+      }
+    }
+  );
+}
+
+export function subscribeToMyRequests(
+  senderId: string,
+  callback: (requests: DeliveryRequest[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  const q = query(collection(db, "requests"), where("senderId", "==", senderId));
+  
+  return onSnapshot(
+    q,
+    (querySnapshot) => {
+      const requests = querySnapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          } as DeliveryRequest)
+      );
+      callback(requests);
+    },
+    (error) => {
+      console.error("Error subscribing to my requests:", error);
+      if (onError) {
+        onError(error);
+      }
+    }
+  );
+}
+
+export function subscribeToAvailableRequests(
+  currentUserId: string,
+  callback: (requests: DeliveryRequest[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, "requests"),
+    where("status", "==", "created"),
+    where("senderId", "!=", currentUserId)
+  );
+  
+  return onSnapshot(
+    q,
+    (querySnapshot) => {
+      const now = new Date();
+      const requests = querySnapshot.docs
+        .map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            } as DeliveryRequest)
+        )
+        .filter((req) => {
+          // Filter out expired requests
+          if (req.expiresAt) {
+            const expiryDate = req.expiresAt.toDate();
+            if (expiryDate < now) {
+              // Mark as expired in database (async, don't wait)
+              if (req.id && req.status === "created") {
+                updateDoc(doc(db, "requests", req.id), {
+                  status: "expired",
+                  updatedAt: serverTimestamp(),
+                }).catch(console.error);
+              }
+              return false;
+            }
+          }
+          return true;
+        });
+      callback(requests);
+    },
+    (error) => {
+      console.error("Error subscribing to available requests:", error);
+      if (error?.code === "failed-precondition" || error?.message?.includes("index")) {
+        const indexUrlMatch = error?.message?.match(/https:\/\/[^\s\)]+/);
+        if (indexUrlMatch) {
+          console.error("🔗 Create Firestore index here:", indexUrlMatch[0]);
+          error.indexUrl = indexUrlMatch[0];
+        }
+      }
+      if (onError) {
+        onError(error);
+      }
+    }
+  );
+}
+
+export function subscribeToRiderActiveTasks(
+  commuterId: string,
+  callback: (tasks: DeliveryRequest[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  const q = query(collection(db, "requests"), where("commuterId", "==", commuterId));
+  const activeStatuses: RequestStatus[] = ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"];
+  
+  return onSnapshot(
+    q,
+    (querySnapshot) => {
+      const tasks = querySnapshot.docs
+        .map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            } as DeliveryRequest)
+        )
+        .filter((req) => activeStatuses.includes(req.status));
+      callback(tasks);
+    },
+    (error) => {
+      console.error("Error subscribing to rider active tasks:", error);
+      if (onError) {
+        onError(error);
+      }
+    }
+  );
 }
 
