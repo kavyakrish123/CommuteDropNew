@@ -320,8 +320,7 @@ export default function RequestDetailPage() {
                   {request.status === "pickup_otp_pending" && "⏳ Pickup OTP verification pending. Enter OTP below."}
                   {request.status === "picked" && "✅ Item picked up! Start delivery when ready."}
                   {request.status === "in_transit" && "🚚 In transit. Enter drop OTP when you arrive."}
-                  {request.status === "delivered" && "✅ Delivery completed!"}
-                  {request.status === "completed" && "✅ Task completed!"}
+                  {(request.status === "delivered" || request.status === "completed") && "✅ Delivery completed!"}
                   {request.status === "requested" && "⏳ Waiting for sender approval."}
                   {request.status === "rejected" && "❌ Your request was rejected."}
                   {!["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit", "delivered", "completed", "requested", "rejected"].includes(request.status) && 
@@ -341,8 +340,7 @@ export default function RequestDetailPage() {
                   {request.status === "pickup_otp_pending" && "⏳ Pickup OTP verification in progress."}
                   {request.status === "picked" && "✅ Item picked up! Delivery in progress."}
                   {request.status === "in_transit" && "🚚 Item in transit. Waiting for delivery."}
-                  {request.status === "delivered" && "✅ Delivery completed!"}
-                  {request.status === "completed" && "✅ Task completed!"}
+                  {(request.status === "delivered" || request.status === "completed") && "✅ Delivery completed!"}
                   {request.status === "cancelled" && "❌ Request cancelled."}
                   {!["created", "requested", "approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit", "delivered", "completed", "cancelled"].includes(request.status) && 
                     `Status: ${request.status}`}

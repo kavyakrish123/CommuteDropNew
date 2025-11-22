@@ -386,7 +386,7 @@ export async function verifyDropOTP(
   if (request.otpDrop.toString() === otp) {
     const docRef = doc(db, "requests", requestId);
     await updateDoc(docRef, {
-      status: "delivered",
+      status: "completed", // Automatically complete when drop OTP is verified
       updatedAt: serverTimestamp(),
     });
     return true;

@@ -13,7 +13,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     pickup_otp_pending: { color: "bg-orange-100 text-orange-800", label: "OTP Pending" },
     picked: { color: "bg-purple-100 text-purple-800", label: "Picked" },
     in_transit: { color: "bg-indigo-100 text-indigo-800", label: "In Transit" },
-    delivered: { color: "bg-teal-100 text-teal-800", label: "Delivered" },
+    delivered: { color: "bg-gray-100 text-gray-800", label: "Completed" }, // Treat delivered as completed
     completed: { color: "bg-gray-100 text-gray-800", label: "Completed" },
     cancelled: { color: "bg-red-100 text-red-800", label: "Cancelled" },
     expired: { color: "bg-gray-100 text-gray-600", label: "Expired" },

@@ -11,7 +11,6 @@ const STATUS_STEPS: Array<{ status: RequestStatus; label: string }> = [
   { status: "created", label: "Created" },
   { status: "approved", label: "Approved" },
   { status: "picked", label: "Picked" },
-  { status: "delivered", label: "Delivered" },
   { status: "completed", label: "Completed" },
 ];
 
@@ -22,8 +21,8 @@ const getStepIndex = (status: RequestStatus): number => {
   if (status === "approved" || status === "waiting_pickup" || status === "pickup_otp_pending") return 1;
   if (status === "picked") return 2;
   if (status === "in_transit") return 2; // Still at picked step
-  if (status === "delivered") return 3;
-  if (status === "completed") return 4;
+  if (status === "delivered") return 3; // Legacy: treat as completed
+  if (status === "completed") return 3;
   return 0;
 };
 
