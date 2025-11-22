@@ -11,7 +11,7 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useRouter } from "next/navigation";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, query, where, collection, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 
 interface PhoneAuthFormProps {
@@ -176,36 +176,79 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
 
       const result = await confirmationResult.confirm(data.otp);
       const user = result.user;
+      const phoneNumber = user.phoneNumber;
 
-      // Check if user document already exists and has completed onboarding
+      if (!phoneNumber) {
+        throw new Error("Phone number not available");
+      }
+
+      // First, check if user document exists by UID
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
       const userData = userDoc.data();
-      const hasCompletedOnboarding = userDoc.exists() && userData?.onboardingCompleted === true;
+      
+      // Also check if a user with this phone number already exists (to handle cases where Firebase creates new UID)
+      let existingUserByPhone = null;
+      let existingUserDocId = null;
+      if (!userDoc.exists() || !userData?.onboardingCompleted) {
+        const phoneQuery = query(
+          collection(db, "users"),
+          where("phone", "==", phoneNumber)
+        );
+        const phoneQuerySnapshot = await getDocs(phoneQuery);
+        if (!phoneQuerySnapshot.empty) {
+          // Get the first matching user (should only be one per phone number)
+          const existingDoc = phoneQuerySnapshot.docs[0];
+          existingUserByPhone = existingDoc.data();
+          existingUserDocId = existingDoc.id;
+        }
+      }
+
+      // Determine if user has completed onboarding (check both UID-based and phone-based)
+      const hasCompletedOnboarding = 
+        (userDoc.exists() && userData?.onboardingCompleted === true) ||
+        (existingUserByPhone?.onboardingCompleted === true);
 
       if (hasCompletedOnboarding) {
-        // Existing user with completed onboarding: only update phone and timestamp
+        // Existing user with completed onboarding: migrate their data to current UID
+        const existingData = existingUserByPhone || userData;
         await setDoc(
           userDocRef,
           {
-            phone: user.phoneNumber,
+            phone: phoneNumber,
+            email: existingData?.email || null,
+            name: existingData?.name || user.displayName || `User ${user.uid.slice(0, 6)}`,
+            role: existingData?.role || "both",
+            profileImage: existingData?.profileImage || null,
+            bio: existingData?.bio || null,
+            payNowQR: existingData?.payNowQR || null,
+            policiesAccepted: true,
+            onboardingCompleted: true, // Preserve onboarding status
+            rating: existingData?.rating || null,
+            totalDeliveries: existingData?.totalDeliveries || 0,
+            createdAt: existingData?.createdAt || serverTimestamp(),
             updatedAt: serverTimestamp(),
           },
           { merge: true }
         );
+        
+        // If we found an existing user with a different UID, we keep both documents
+        // (the old one will remain but the new one will be used going forward)
+        // This is safer than deleting, in case there are references to the old UID
+        
         router.push("/app");
       } else {
         // New user or user without completed onboarding: create/update with default values
         await setDoc(
           userDocRef,
           {
-            phone: user.phoneNumber,
+            phone: phoneNumber,
             email: null,
-            name: userData?.name || user.displayName || `User ${user.uid.slice(0, 6)}`,
-            role: userData?.role || "both",
+            name: userData?.name || existingUserByPhone?.name || user.displayName || `User ${user.uid.slice(0, 6)}`,
+            role: userData?.role || existingUserByPhone?.role || "both",
             policiesAccepted: true, // User must have viewed terms before reaching here
             onboardingCompleted: false, // Will be set after onboarding
-            createdAt: userData?.createdAt || serverTimestamp(),
+            createdAt: userData?.createdAt || existingUserByPhone?.createdAt || serverTimestamp(),
             updatedAt: serverTimestamp(),
           },
           { merge: true }
