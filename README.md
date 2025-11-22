@@ -2,6 +2,8 @@
 
 **CommuteDrop** is a peer-to-peer "deliver on the way" mobile and web application. Senders create delivery requests, and commuters (regular users traveling anyway) can see open requests near them and accept one. The app uses OTP-based confirmation at pickup and drop points.
 
+> Auto-deployment test
+
 ## Features
 
 - 🔐 **Phone Authentication**: Secure phone number authentication with OTP verification
