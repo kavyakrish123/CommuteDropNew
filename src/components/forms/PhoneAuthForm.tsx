@@ -182,6 +182,9 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
         throw new Error("Phone number not available");
       }
 
+      // Normalize phone number for consistent comparison (remove spaces, ensure + prefix)
+      const normalizedPhone = phoneNumber.trim().replace(/\s+/g, "");
+
       // First, check if user document exists by UID
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
@@ -190,10 +193,12 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
       // Also check if a user with this phone number already exists (to handle cases where Firebase creates new UID)
       let existingUserByPhone = null;
       let existingUserDocId = null;
-      if (!userDoc.exists() || !userData?.onboardingCompleted) {
+      
+      // Always check by phone number to find existing users, regardless of UID match
+      try {
         const phoneQuery = query(
           collection(db, "users"),
-          where("phone", "==", phoneNumber)
+          where("phone", "==", normalizedPhone)
         );
         const phoneQuerySnapshot = await getDocs(phoneQuery);
         if (!phoneQuerySnapshot.empty) {
@@ -201,13 +206,32 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
           const existingDoc = phoneQuerySnapshot.docs[0];
           existingUserByPhone = existingDoc.data();
           existingUserDocId = existingDoc.id;
+          console.log("Found existing user by phone:", existingUserDocId, existingUserByPhone?.onboardingCompleted);
+        }
+      } catch (error: any) {
+        // If query fails (e.g., missing index), log but continue
+        console.warn("Error querying users by phone:", error);
+        if (error?.code === "failed-precondition") {
+          console.error("Firestore index required for phone query. Check console for link.");
         }
       }
 
       // Determine if user has completed onboarding (check both UID-based and phone-based)
+      // Priority: 1) Check by UID first, 2) Then check by phone number
       const hasCompletedOnboarding = 
         (userDoc.exists() && userData?.onboardingCompleted === true) ||
         (existingUserByPhone?.onboardingCompleted === true);
+      
+      console.log("Onboarding check:", {
+        uid: user.uid,
+        phone: normalizedPhone,
+        uidExists: userDoc.exists(),
+        uidOnboardingCompleted: userData?.onboardingCompleted,
+        phoneUserFound: !!existingUserByPhone,
+        phoneUserDocId: existingUserDocId,
+        phoneUserOnboardingCompleted: existingUserByPhone?.onboardingCompleted,
+        hasCompletedOnboarding
+      });
 
       if (hasCompletedOnboarding) {
         // Existing user with completed onboarding: migrate their data to current UID
@@ -215,7 +239,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
         await setDoc(
           userDocRef,
           {
-            phone: phoneNumber,
+            phone: normalizedPhone,
             email: existingData?.email || null,
             name: existingData?.name || user.displayName || `User ${user.uid.slice(0, 6)}`,
             role: existingData?.role || "both",
@@ -242,7 +266,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
         await setDoc(
           userDocRef,
           {
-            phone: phoneNumber,
+            phone: normalizedPhone,
             email: null,
             name: userData?.name || existingUserByPhone?.name || user.displayName || `User ${user.uid.slice(0, 6)}`,
             role: userData?.role || existingUserByPhone?.role || "both",
