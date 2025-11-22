@@ -70,34 +70,52 @@ export default function CreateRequestPage() {
     return await getDownloadURL(storageRef);
   };
 
-  const onSubmit = async (data: any) => {
-    if (!user) return;
-
-    if (step < 4) {
-      // Validation for current step
-      if (step === 1) {
-        if (!itemPhoto) {
-          showToast("Please upload an item photo", "error");
-          return;
-        }
-        if (!data.category) {
-          showToast("Please select a category", "error");
-          return;
-        }
-        setStep(2);
+  const handleStepContinue = () => {
+    if (step === 1) {
+      const itemDescription = form.getValues("itemDescription");
+      const category = form.getValues("category");
+      
+      if (!itemDescription || itemDescription.length < 10) {
+        showToast("Please enter an item description (at least 10 characters)", "error");
         return;
       }
-      if (step === 2) {
-        setStep(3);
+      if (!category) {
+        showToast("Please select a category", "error");
         return;
       }
-      if (step === 3) {
-        setStep(4);
+      if (!itemPhoto) {
+        showToast("Please upload an item photo", "error");
         return;
       }
+      setStep(2);
+      return;
     }
 
-    // Final submit
+    if (step === 2) {
+      const pickupPincode = form.getValues("pickupPincode");
+      if (!pickupPincode || pickupPincode.length < 5) {
+        showToast("Please enter a valid pickup postal code", "error");
+        return;
+      }
+      setStep(3);
+      return;
+    }
+
+    if (step === 3) {
+      const dropPincode = form.getValues("dropPincode");
+      if (!dropPincode || dropPincode.length < 5) {
+        showToast("Please enter a valid drop postal code", "error");
+        return;
+      }
+      setStep(4);
+      return;
+    }
+  };
+
+  const onSubmit = async (data: z.infer<typeof createRequestSchema>) => {
+    if (!user) return;
+
+    // Final submit - step 4
     try {
       setUploading(true);
 
@@ -235,7 +253,8 @@ export default function CreateRequestPage() {
               </div>
 
               <button
-                type="submit"
+                type="button"
+                onClick={handleStepContinue}
                 disabled={!itemPhoto || !form.watch("category") || !form.watch("itemDescription")}
                 className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -293,7 +312,8 @@ export default function CreateRequestPage() {
                   Back
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleStepContinue}
                   className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700"
                 >
                   Continue
@@ -351,7 +371,8 @@ export default function CreateRequestPage() {
                   Back
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleStepContinue}
                   className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700"
                 >
                   Continue
