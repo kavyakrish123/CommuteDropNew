@@ -223,21 +223,62 @@ export default function RequestDetailPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
-          {/* Status */}
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <StatusBadge status={request.status} />
-              {request.status === "created" && request.expiresAt && (
-                <CountdownTimer expiresAt={request.expiresAt} />
+          {/* Status - Prominent display for riders */}
+          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+            <div className="flex justify-between items-center flex-wrap gap-2 mb-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <StatusBadge status={request.status} />
+                {request.status === "created" && request.expiresAt && (
+                  <CountdownTimer expiresAt={request.expiresAt} />
+                )}
+              </div>
+              {isSender && (
+                <button
+                  onClick={() => setShowOTPs(!showOTPs)}
+                  className="text-sm text-indigo-600 hover:text-indigo-700 active:text-indigo-800"
+                >
+                  {showOTPs ? "Hide" : "Show"} OTPs
+                </button>
               )}
             </div>
+            {/* Status message for riders */}
+            {isCommuter && (
+              <div className="mt-3 pt-3 border-t border-indigo-200">
+                <p className="text-sm font-semibold text-gray-900 mb-1">Current Status:</p>
+                <p className="text-base text-gray-700">
+                  {request.status === "approved" && "✅ You've been approved! Ready to pick up the item."}
+                  {request.status === "waiting_pickup" && "📍 Waiting for pickup. Enter the pickup OTP below."}
+                  {request.status === "pickup_otp_pending" && "⏳ Pickup OTP verification pending. Enter OTP below."}
+                  {request.status === "picked" && "✅ Item picked up! Start delivery when ready."}
+                  {request.status === "in_transit" && "🚚 In transit. Enter drop OTP when you arrive."}
+                  {request.status === "delivered" && "✅ Delivery completed!"}
+                  {request.status === "completed" && "✅ Task completed!"}
+                  {request.status === "requested" && "⏳ Waiting for sender approval."}
+                  {request.status === "rejected" && "❌ Your request was rejected."}
+                  {!["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit", "delivered", "completed", "requested", "rejected"].includes(request.status) && 
+                    `Status: ${request.status}`}
+                </p>
+              </div>
+            )}
+            {/* Status message for senders */}
             {isSender && (
-              <button
-                onClick={() => setShowOTPs(!showOTPs)}
-                className="text-sm text-indigo-600 hover:text-indigo-700"
-              >
-                {showOTPs ? "Hide" : "Show"} OTPs
-              </button>
+              <div className="mt-3 pt-3 border-t border-indigo-200">
+                <p className="text-sm font-semibold text-gray-900 mb-1">Current Status:</p>
+                <p className="text-base text-gray-700">
+                  {request.status === "created" && "📦 Request created. Waiting for riders to request."}
+                  {request.status === "requested" && "⏳ Rider has requested. Review and approve."}
+                  {request.status === "approved" && "✅ Rider approved. Waiting for pickup."}
+                  {request.status === "waiting_pickup" && "📍 Rider is ready to pick up. Provide pickup OTP."}
+                  {request.status === "pickup_otp_pending" && "⏳ Pickup OTP verification in progress."}
+                  {request.status === "picked" && "✅ Item picked up! Delivery in progress."}
+                  {request.status === "in_transit" && "🚚 Item in transit. Waiting for delivery."}
+                  {request.status === "delivered" && "✅ Delivery completed!"}
+                  {request.status === "completed" && "✅ Task completed!"}
+                  {request.status === "cancelled" && "❌ Request cancelled."}
+                  {!["created", "requested", "approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit", "delivered", "completed", "cancelled"].includes(request.status) && 
+                    `Status: ${request.status}`}
+                </p>
+              </div>
             )}
           </div>
 
