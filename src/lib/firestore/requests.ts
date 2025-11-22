@@ -158,6 +158,7 @@ export async function getRiderActiveTasks(commuterId: string): Promise<DeliveryR
   );
   const querySnapshot = await getDocs(q);
   
+  // Active statuses: tasks that are not yet completed
   const activeStatuses: RequestStatus[] = ["accepted", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"];
   
   return querySnapshot.docs
@@ -171,27 +172,33 @@ export async function getRiderActiveTasks(commuterId: string): Promise<DeliveryR
     .filter((req) => activeStatuses.includes(req.status));
 }
 
+export async function getRiderCurrentPickup(commuterId: string): Promise<DeliveryRequest | null> {
+  // Get the current pickup task (one that hasn't been picked up yet)
+  const activeTasks = await getRiderActiveTasks(commuterId);
+  
+  // Find tasks that are waiting for pickup OTP verification
+  const waitingPickup = activeTasks.find(
+    (task) => task.status === "accepted" || task.status === "waiting_pickup" || task.status === "pickup_otp_pending"
+  );
+  
+  return waitingPickup || null;
+}
+
 export async function canRiderAcceptTask(commuterId: string): Promise<{ canAccept: boolean; reason?: string }> {
   const activeTasks = await getRiderActiveTasks(commuterId);
   
-  // Check max 3 active tasks
-  if (activeTasks.length >= 3) {
-    return {
-      canAccept: false,
-      reason: "You have reached the maximum of 3 active pickups",
-    };
-  }
-  
-  // Check if any task is waiting for OTP verification
-  const waitingOTP = activeTasks.some(
-    (task) => task.status === "pickup_otp_pending" || task.status === "waiting_pickup"
-  );
-  
-  if (waitingOTP) {
-    return {
-      canAccept: false,
-      reason: "Please verify OTP for your current pickup before accepting new tasks",
-    };
+  // NEW RULE: Only one pickup at a time - must verify pickup OTP before accepting next task
+  // Once a task is "picked" (OTP verified), rider can accept another task
+  if (activeTasks.length > 0) {
+    // Check if there's a task in pickup phase (not yet picked)
+    const currentPickup = await getRiderCurrentPickup(commuterId);
+    
+    if (currentPickup) {
+      return {
+        canAccept: false,
+        reason: `You have an active pickup. Please go to the pickup location and verify the OTP before accepting a new task.`,
+      };
+    }
   }
   
   return { canAccept: true };

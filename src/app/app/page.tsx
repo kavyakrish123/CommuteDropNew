@@ -166,7 +166,7 @@ export default function DashboardPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            My Active Tasks ({myActiveTasks.length}/3)
+            My Active Tasks ({myActiveTasks.length})
           </button>
           <button
             onClick={() => setActiveTab("available")}
@@ -217,13 +217,13 @@ export default function DashboardPage() {
         {activeTab === "my-tasks" && myActiveTasks.length > 0 && (
           <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              <strong>Active Tasks:</strong> {myActiveTasks.length} of 3 maximum
+              <strong>Active Task:</strong> Complete your current pickup before accepting a new task.
             </p>
             {myActiveTasks.some(
-              (t) => t.status === "pickup_otp_pending" || t.status === "waiting_pickup"
+              (t) => t.status === "pickup_otp_pending" || t.status === "waiting_pickup" || t.status === "accepted"
             ) && (
               <p className="text-sm text-orange-800 mt-1">
-                ⚠️ You have tasks waiting for OTP verification. Complete them before accepting new tasks.
+                ⚠️ You have a task waiting for pickup. Go to the pickup location and verify OTP before accepting new tasks.
               </p>
             )}
           </div>
