@@ -25,7 +25,8 @@ import { otpVerificationSchema } from "@/lib/validation/schemas";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import Link from "next/link";
-import { ChatWindow } from "@/components/chat/ChatWindow";
+// Chat temporarily disabled
+// import { ChatWindow } from "@/components/chat/ChatWindow";
 import { RiderProfileCard } from "@/components/ui/RiderProfileCard";
 
 export default function RequestDetailPage() {
@@ -41,7 +42,8 @@ export default function RequestDetailPage() {
   const [requestedRider, setRequestedRider] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOTPs, setShowOTPs] = useState(false);
-  const [showChat, setShowChat] = useState(false);
+  // Chat temporarily disabled
+  // const [showChat, setShowChat] = useState(false);
   const [otpType, setOtpType] = useState<"pickup" | "drop" | null>(null);
 
   const otpForm = useForm<{ otp: string }>({
@@ -194,10 +196,10 @@ export default function RequestDetailPage() {
   const canVerifyPickupOTP = isCommuter && request.status === "waiting_pickup";
   const canStartTransit = isCommuter && request.status === "picked";
   const canDeliver = isCommuter && request.status === "in_transit";
-  // Chat only available from approved status until delivery (disabled once delivered/completed)
-  const canChat = Boolean((isSender && request.commuterId) || isCommuter);
-  const chatAvailable = canChat && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status);
-  const chatDisabled = canChat && (request.status === "delivered" || request.status === "completed");
+  // Chat temporarily disabled
+  // const canChat = Boolean((isSender && request.commuterId) || isCommuter);
+  // const chatAvailable = canChat && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status);
+  // const chatDisabled = canChat && (request.status === "delivered" || request.status === "completed");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -348,44 +350,7 @@ export default function RequestDetailPage() {
             </div>
           )}
 
-          {/* Chat Toggle - Show if chat is available or was available (for viewing history) */}
-          {(chatAvailable || chatDisabled) && (
-            <div className="pt-4 border-t border-gray-200">
-              {chatDisabled ? (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 text-center mb-2">
-                    Chat is disabled. Delivery has been completed.
-                  </p>
-                  <button
-                    onClick={() => setShowChat(!showChat)}
-                    className="w-full bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed"
-                    disabled
-                  >
-                    {showChat ? "Hide Chat History" : "View Chat History (Read-only)"}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowChat(!showChat)}
-                  className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700"
-                >
-                  {showChat ? "Hide Chat" : "Open Chat"}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Chat Window - Show if available or disabled (for viewing history) */}
-          {showChat && (chatAvailable || chatDisabled) && (
-            <div className="pt-4 border-t border-gray-200">
-              <ChatWindow
-                requestId={requestId}
-                otherUserId={isSender ? (request.commuterId || "") : request.senderId}
-                otherUserName={isSender ? commuterName : senderName}
-                disabled={chatDisabled}
-              />
-            </div>
-          )}
+          {/* Chat temporarily disabled */}
 
           {/* Actions */}
           <div className="space-y-3 pt-4 border-t border-gray-200">
@@ -420,10 +385,13 @@ export default function RequestDetailPage() {
                       </div>
                     )}
 
-            {canVerifyPickupOTP && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">
-                  Enter Pickup OTP (from sender):
+            {(canVerifyPickupOTP || canPickup) && (
+              <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-2">
+                  Enter Pickup OTP:
+                </p>
+                <p className="text-xs text-gray-600 mb-3">
+                  Get the 4-digit OTP from the sender to verify pickup.
                 </p>
                 <form
                   onSubmit={(e) => {
@@ -435,19 +403,21 @@ export default function RequestDetailPage() {
                   <input
                     {...otpForm.register("otp")}
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     maxLength={4}
-                    placeholder="0000"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter 4-digit OTP"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg text-center font-semibold"
                   />
                   <button
                     type="submit"
-                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700"
+                    className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.98] transition-all duration-150"
                   >
                     Verify
                   </button>
                 </form>
                 {otpForm.formState.errors.otp && (
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-red-600 mt-2">
                     {otpForm.formState.errors.otp.message}
                   </p>
                 )}
@@ -472,9 +442,12 @@ export default function RequestDetailPage() {
             )}
 
             {canDeliver && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">
+              <div className="space-y-2 bg-green-50 border border-green-200 rounded-xl p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-2">
                   Enter Drop OTP:
+                </p>
+                <p className="text-xs text-gray-600 mb-3">
+                  Enter the 4-digit OTP to complete delivery.
                 </p>
                 <form
                   onSubmit={(e) => {
@@ -486,19 +459,21 @@ export default function RequestDetailPage() {
                   <input
                     {...otpForm.register("otp")}
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     maxLength={4}
-                    placeholder="0000"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter 4-digit OTP"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg text-center font-semibold"
                   />
                   <button
                     type="submit"
-                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700"
+                    className="bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 active:bg-green-800 active:scale-[0.98] transition-all duration-150"
                   >
                     Verify
                   </button>
                 </form>
                 {otpForm.formState.errors.otp && (
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-red-600 mt-2">
                     {otpForm.formState.errors.otp.message}
                   </p>
                 )}
