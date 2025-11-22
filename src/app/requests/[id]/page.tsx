@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useRouter, useParams } from "next/navigation";
-import { DeliveryRequest } from "@/lib/types";
+import { DeliveryRequest, User } from "@/lib/types";
 import {
   getRequest,
   requestToDeliver,
@@ -14,7 +14,7 @@ import {
   initiatePickupOTP,
   startTransit,
 } from "@/lib/firestore/requests";
-import { getUser, User } from "@/lib/firestore/users";
+import { getUser } from "@/lib/firestore/users";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ParcelTimeline } from "@/components/ui/ParcelTimeline";
 import { MapLinkButton } from "@/components/ui/MapLinkButton";
