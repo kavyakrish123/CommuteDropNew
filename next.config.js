@@ -1,11 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Only use static export when building for Capacitor (via CAPACITOR_BUILD env var)
-  ...(process.env.CAPACITOR_BUILD === 'true' && {
-    output: 'export',
-    trailingSlash: true,
-  }),
+  // For Capacitor, we'll use regular build (not static export) due to dynamic routes
+  // The build output will be in .next directory
   images: {
     unoptimized: true,
   },
