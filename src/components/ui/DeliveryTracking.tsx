@@ -1,9 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { DeliveryRequest } from "@/lib/types";
 import { calculateDistance } from "@/lib/utils/geolocation";
 import { MapLinkButton } from "./MapLinkButton";
+
+// Dynamically import map component to avoid SSR issues
+const DeliveryMap = dynamic(() => import("./DeliveryMap").then((mod) => ({ default: mod.DeliveryMap })), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+        <p className="text-sm text-gray-600">Loading map...</p>
+      </div>
+    </div>
+  ),
+});
 
 interface DeliveryTrackingProps {
   request: DeliveryRequest;
@@ -172,12 +186,27 @@ export function DeliveryTracking({ request }: DeliveryTrackingProps) {
         </p>
       </div>
 
-      {/* Map Display */}
-      <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
-          <div className="text-center space-y-3 p-4">
+      {/* Interactive Map Display */}
+      <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden border border-gray-300">
+        <DeliveryMap
+          pickupLat={request.pickupLat}
+          pickupLng={request.pickupLng}
+          dropLat={request.dropLat}
+          dropLng={request.dropLng}
+          riderLat={riderLocation?.lat}
+          riderLng={riderLocation?.lng}
+          centerLat={centerLat}
+          centerLng={centerLng}
+        />
+        {/* Button to open in external maps */}
+        <div className="absolute top-2 right-2 z-[1000]">
+          <button
+            onClick={openMapsInNewTab}
+            className="bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg shadow-md text-sm font-medium flex items-center gap-2 border border-gray-200"
+            title="Open in Google Maps"
+          >
             <svg
-              className="w-16 h-16 mx-auto text-indigo-500"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -186,71 +215,12 @@ export function DeliveryTracking({ request }: DeliveryTrackingProps) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
               />
             </svg>
-            <p className="text-sm font-medium text-gray-700">
-              Tracking Active
-            </p>
-            <button
-              onClick={openMapsInNewTab}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
-              Open in Maps
-            </button>
-          </div>
+            Open
+          </button>
         </div>
-        {/* Visual indicators */}
-        {request.pickupLat && request.pickupLng && (
-          <div
-            className="absolute w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"
-            style={{
-              left: "20%",
-              top: "30%",
-            }}
-            title="Pickup Location"
-          />
-        )}
-        {request.dropLat && request.dropLng && (
-          <div
-            className="absolute w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-lg"
-            style={{
-              right: "20%",
-              bottom: "30%",
-            }}
-            title="Drop Location"
-          />
-        )}
-        {riderLocation && (
-          <div
-            className="absolute w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse"
-            style={{
-              left: "50%",
-              top: "50%",
-              transform: "translate(-50%, -50%)",
-            }}
-            title="Rider Location"
-          />
-        )}
       </div>
 
       {/* Location Info */}
