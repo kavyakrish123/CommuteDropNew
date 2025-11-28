@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DeliveryRequest } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 import { CountdownTimer } from "./CountdownTimer";
+import { LocationDisplay } from "./LocationDisplay";
 import { format } from "date-fns";
 
 interface RequestCardProps {
@@ -27,32 +28,32 @@ export function RequestCard({
   const isMyTask = currentUserId && request.commuterId === currentUserId;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full min-h-[420px] max-h-[500px] active:scale-[0.98] transition-transform duration-150">
-      {/* Header - Fixed height */}
-      <div className="flex justify-between items-start mb-3 px-4 pt-4 flex-shrink-0">
-        <div className="flex items-center gap-1.5 flex-wrap min-h-[28px] flex-1">
+    <div className="bg-white rounded-2xl shadow-md border border-gray-200 flex flex-col h-full min-h-[480px] active:scale-[0.98] transition-transform duration-150 overflow-hidden">
+      {/* Header - Status Bar */}
+      <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <StatusBadge status={request.status} />
           {isMyRequest && (
-            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded whitespace-nowrap">
+            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium whitespace-nowrap">
               Your Request
             </span>
           )}
           {isMyTask && (
-            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded whitespace-nowrap">
+            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium whitespace-nowrap">
               Your Task
             </span>
           )}
-          {request.status === "created" && request.expiresAt && (
-            <CountdownTimer expiresAt={request.expiresAt} />
-          )}
         </div>
-        <span className="text-xs text-gray-500 whitespace-nowrap ml-2 flex-shrink-0">{createdAt}</span>
+        {request.status === "created" && request.expiresAt && (
+          <CountdownTimer expiresAt={request.expiresAt} />
+        )}
       </div>
 
-      {/* Content - Flexible, grows to fill space */}
-      <div className="flex-1 px-4 space-y-2.5 mb-3 overflow-hidden">
+      {/* Content - Grab-style layout */}
+      <div className="flex-1 px-4 py-4 space-y-3 overflow-hidden flex flex-col">
+        {/* Item Photo */}
         {request.itemPhoto && (
-          <div className="w-full h-32 rounded-lg overflow-hidden mb-2 bg-gray-100 flex-shrink-0">
+          <div className="w-full h-40 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
             <img
               src={request.itemPhoto}
               alt="Item"
@@ -60,38 +61,55 @@ export function RequestCard({
             />
           </div>
         )}
-        <div className="min-h-[44px]">
-          <p className="text-xs text-gray-500 mb-0.5">Pickup</p>
-          <p className="font-medium text-sm truncate" title={`${request.pickupPincode}${request.pickupDetails ? ` - ${request.pickupDetails}` : ''}`}>
-            {request.pickupPincode}
-            {request.pickupDetails && ` - ${request.pickupDetails}`}
-          </p>
+
+        {/* Pickup Location - Grab Style */}
+        <div className="flex-shrink-0">
+          <LocationDisplay
+            type="pickup"
+            pincode={request.pickupPincode}
+            details={request.pickupDetails || undefined}
+            showMapButton={false}
+          />
         </div>
-        <div className="min-h-[44px]">
-          <p className="text-xs text-gray-500 mb-0.5">Drop</p>
-          <p className="font-medium text-sm truncate" title={`${request.dropPincode}${request.dropDetails ? ` - ${request.dropDetails}` : ''}`}>
-            {request.dropPincode}
-            {request.dropDetails && ` - ${request.dropDetails}`}
-          </p>
+
+        {/* Divider */}
+        <div className="flex items-center gap-2 px-2 flex-shrink-0">
+          <div className="flex-1 h-px bg-gray-200"></div>
+          <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+          <div className="w-1 h-1 bg-gray-400 rounded-full" style={{ marginLeft: '-4px' }}></div>
+          <div className="flex-1 h-px bg-gray-200"></div>
         </div>
-        <div className="min-h-[64px]">
-          <p className="text-xs text-gray-500 mb-0.5">Item</p>
-          <p className="font-medium text-sm line-clamp-2 mb-1" title={request.itemDescription}>{request.itemDescription}</p>
+
+        {/* Drop Location - Grab Style */}
+        <div className="flex-shrink-0">
+          <LocationDisplay
+            type="drop"
+            pincode={request.dropPincode}
+            details={request.dropDetails || undefined}
+            showMapButton={false}
+          />
+        </div>
+
+        {/* Item Description */}
+        <div className="pt-2 border-t border-gray-100 flex-shrink-0">
+          <p className="text-xs text-gray-500 font-medium mb-1">ITEM</p>
+          <p className="text-sm font-semibold text-gray-900 line-clamp-2" title={request.itemDescription}>
+            {request.itemDescription}
+          </p>
           {request.category && (
-            <span className="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded">
+            <span className="inline-block mt-1.5 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-full font-medium">
               {request.category}
             </span>
           )}
         </div>
-        <div className="min-h-[24px]">
-          {request.priceOffered ? (
-            <p className="text-sm font-semibold text-indigo-600">
-              ${request.priceOffered}
-            </p>
-          ) : (
-            <span className="invisible">$0</span>
-          )}
-        </div>
+
+        {/* Price */}
+        {request.priceOffered && (
+          <div className="flex-shrink-0 pt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-500 font-medium mb-0.5">PRICE</p>
+            <p className="text-xl font-bold text-green-600">${request.priceOffered}</p>
+          </div>
+        )}
       </div>
 
       {/* Buttons - Fixed at bottom */}

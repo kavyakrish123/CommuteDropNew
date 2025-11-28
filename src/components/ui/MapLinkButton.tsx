@@ -33,10 +33,10 @@ export function MapLinkButton({ pincode, details, type }: MapLinkButtonProps) {
   return (
     <button
       onClick={handleClick}
-      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+      className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
     >
       <svg
-        className="w-5 h-5"
+        className="w-4 h-4"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -45,16 +45,10 @@ export function MapLinkButton({ pincode, details, type }: MapLinkButtonProps) {
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth={2}
-          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-        />
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
         />
       </svg>
-      <span>Open in Maps</span>
+      <span>Maps</span>
     </button>
   );
 }

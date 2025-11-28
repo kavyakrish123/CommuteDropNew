@@ -26,6 +26,7 @@ import {
   subscribeToRiderActiveTasks,
 } from "@/lib/firestore/requests";
 import { MobileMenu } from "@/components/ui/MobileMenu";
+import { ActiveJobBanner } from "@/components/ui/ActiveJobBanner";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -192,10 +193,10 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header - Grab Style */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold">
             <span className="text-[#00B14F]">Commute</span>
             <span className="text-gray-900">Drop</span>
           </h1>
@@ -218,7 +219,7 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("my-requests")}
             className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
               activeTab === "my-requests"
-                ? "text-indigo-600 border-b-2 border-indigo-600"
+                ? "text-[#00B14F] border-b-2 border-[#00B14F]"
                 : "text-gray-500 active:text-gray-700"
             }`}
           >
@@ -233,7 +234,7 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("my-tasks")}
             className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
               activeTab === "my-tasks"
-                ? "text-indigo-600 border-b-2 border-indigo-600"
+                ? "text-[#00B14F] border-b-2 border-[#00B14F]"
                 : "text-gray-500 active:text-gray-700"
             }`}
           >
@@ -243,13 +244,41 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("available")}
             className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
               activeTab === "available"
-                ? "text-indigo-600 border-b-2 border-indigo-600"
+                ? "text-[#00B14F] border-b-2 border-[#00B14F]"
                 : "text-gray-500 active:text-gray-700"
             }`}
           >
             Available
           </button>
         </div>
+
+        {/* Active Job Banner - Show at top when job is taken */}
+        {myActiveTasks.length > 0 && (
+          <div className="mb-4">
+            {myActiveTasks.map((task) =>
+              task.id ? (
+                <ActiveJobBanner key={task.id} request={task} isRider={true} />
+              ) : null
+            )}
+          </div>
+        )}
+
+        {/* Active Requests Banner - Show for senders when rider is assigned */}
+        {activeTab === "my-requests" && myRequests.some(
+          (r) => r.commuterId && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(r.status)
+        ) && (
+          <div className="mb-4">
+            {myRequests
+              .filter(
+                (r) => r.commuterId && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(r.status)
+              )
+              .map((request) =>
+                request.id ? (
+                  <ActiveJobBanner key={request.id} request={request} isRider={false} />
+                ) : null
+              )}
+          </div>
+        )}
 
         {/* Filters for Available Tasks */}
         {activeTab === "available" && (
@@ -319,21 +348,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Active Tasks Info */}
-        {activeTab === "my-tasks" && myActiveTasks.length > 0 && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <p className="text-sm text-blue-800">
-              <strong>Active Task:</strong> Complete your current pickup before accepting a new task.
-            </p>
-            {myActiveTasks.some(
-              (t) => t.status === "pickup_otp_pending" || t.status === "waiting_pickup" || t.status === "approved"
-            ) && (
-              <p className="text-sm text-orange-800 mt-1">
-                ⚠️ You have a task waiting for pickup. Go to the pickup location and verify OTP before accepting new tasks.
-              </p>
-            )}
-          </div>
-        )}
 
         {/* Ethical Warning */}
         {activeTab === "my-requests" && (
@@ -454,10 +468,10 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Floating Action Button - Mobile optimized */}
+      {/* Floating Action Button - Grab Style */}
       <button
         onClick={() => router.push("/requests/create")}
-        className="fixed bottom-6 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-md hover:bg-indigo-700 active:bg-indigo-800 active:scale-95 transition-all duration-150 z-50"
+        className="fixed bottom-6 right-6 bg-[#00B14F] text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-[#009640] active:bg-[#008530] active:scale-95 transition-all duration-150 z-50"
         style={{ WebkitTapHighlightColor: 'transparent' }}
         aria-label="Create new request"
       >

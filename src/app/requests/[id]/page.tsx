@@ -40,6 +40,7 @@ import { submitRating, hasUserRated } from "@/lib/firestore/ratings";
 import { MobileMenu } from "@/components/ui/MobileMenu";
 import { DeliveryTracking } from "@/components/ui/DeliveryTracking";
 import { getCurrentLocation } from "@/lib/utils/geolocation";
+import { LocationDisplay } from "@/components/ui/LocationDisplay";
 
 export default function RequestDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -470,37 +471,21 @@ export default function RequestDetailPage() {
             </div>
           )}
 
-          {/* Pickup */}
-          <div>
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Pickup Location</h3>
-              <MapLinkButton
-                pincode={request.pickupPincode}
-                details={request.pickupDetails}
-                type="pickup"
-              />
-            </div>
-            <p className="font-semibold text-lg">{request.pickupPincode}</p>
-            {request.pickupDetails && (
-              <p className="text-gray-700 text-sm">{request.pickupDetails}</p>
-            )}
-          </div>
+          {/* Pickup - Grab Style */}
+          <LocationDisplay
+            type="pickup"
+            pincode={request.pickupPincode}
+            details={request.pickupDetails || undefined}
+            showMapButton={true}
+          />
 
-          {/* Drop */}
-          <div>
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Drop Location</h3>
-              <MapLinkButton
-                pincode={request.dropPincode}
-                details={request.dropDetails}
-                type="drop"
-              />
-            </div>
-            <p className="font-semibold text-lg">{request.dropPincode}</p>
-            {request.dropDetails && (
-              <p className="text-gray-700 text-sm">{request.dropDetails}</p>
-            )}
-          </div>
+          {/* Drop - Grab Style */}
+          <LocationDisplay
+            type="drop"
+            pincode={request.dropPincode}
+            details={request.dropDetails || undefined}
+            showMapButton={true}
+          />
 
           {/* Item */}
           <div>
