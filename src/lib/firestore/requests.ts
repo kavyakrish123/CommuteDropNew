@@ -387,11 +387,94 @@ export async function verifyDropOTP(
     const docRef = doc(db, "requests", requestId);
     await updateDoc(docRef, {
       status: "completed", // Automatically complete when drop OTP is verified
+      trackingEnabled: false, // Disable tracking when delivery is completed
       updatedAt: serverTimestamp(),
     });
     return true;
   }
   return false;
+}
+
+/**
+ * Enable location tracking for a delivery request
+ */
+export async function enableTracking(requestId: string, commuterId: string): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+  
+  if (request.commuterId !== commuterId) {
+    throw new Error("Only the assigned rider can enable tracking");
+  }
+  
+  if (request.status !== "picked" && request.status !== "in_transit") {
+    throw new Error("Tracking can only be enabled during transit");
+  }
+  
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, {
+    trackingEnabled: true,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Disable location tracking for a delivery request
+ */
+export async function disableTracking(requestId: string, commuterId: string): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+  
+  if (request.commuterId !== commuterId) {
+    throw new Error("Only the assigned rider can disable tracking");
+  }
+  
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, {
+    trackingEnabled: false,
+    riderLat: null,
+    riderLng: null,
+    lastLocationUpdate: null,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Update rider's current location during delivery
+ */
+export async function updateRiderLocation(
+  requestId: string,
+  commuterId: string,
+  lat: number,
+  lng: number
+): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+  
+  if (request.commuterId !== commuterId) {
+    throw new Error("Only the assigned rider can update location");
+  }
+  
+  if (!request.trackingEnabled) {
+    throw new Error("Tracking is not enabled for this delivery");
+  }
+  
+  if (request.status !== "picked" && request.status !== "in_transit") {
+    throw new Error("Location can only be updated during transit");
+  }
+  
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, {
+    riderLat: lat,
+    riderLng: lng,
+    lastLocationUpdate: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
 }
 
 export async function cancelRequest(requestId: string, senderId: string): Promise<void> {

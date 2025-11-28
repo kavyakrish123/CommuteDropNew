@@ -77,5 +77,10 @@ export interface DeliveryRequest {
   commuterRating?: number | null; // Rating given by commuter to sender
   senderRatingComment?: string | null;
   commuterRatingComment?: string | null;
+  // Delivery Tracking
+  trackingEnabled?: boolean; // Whether rider has enabled location tracking
+  riderLat?: number | null; // Rider's current latitude
+  riderLng?: number | null; // Rider's current longitude
+  lastLocationUpdate?: Timestamp | null; // Last time rider location was updated
 }
 

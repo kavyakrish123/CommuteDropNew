@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useRouter, useParams } from "next/navigation";
 import { DeliveryRequest, User } from "@/lib/types";
@@ -13,6 +13,9 @@ import {
   verifyDropOTP,
   initiatePickupOTP,
   startTransit,
+  enableTracking,
+  disableTracking,
+  updateRiderLocation,
 } from "@/lib/firestore/requests";
 import { getUser } from "@/lib/firestore/users";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -35,6 +38,8 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { RatingModal } from "@/components/ui/RatingModal";
 import { submitRating, hasUserRated } from "@/lib/firestore/ratings";
 import { MobileMenu } from "@/components/ui/MobileMenu";
+import { DeliveryTracking } from "@/components/ui/DeliveryTracking";
+import { getCurrentLocation } from "@/lib/utils/geolocation";
 
 export default function RequestDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -57,6 +62,8 @@ export default function RequestDetailPage() {
   // Chat temporarily disabled
   // const [showChat, setShowChat] = useState(false);
   const [otpType, setOtpType] = useState<"pickup" | "drop" | null>(null);
+  const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
+  const locationUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const otpForm = useForm<{ otp: string }>({
     resolver: zodResolver(otpVerificationSchema),
@@ -240,6 +247,97 @@ export default function RequestDetailPage() {
     }
   };
 
+  const handleEnableTracking = async () => {
+    if (!user || !request) return;
+
+    try {
+      setIsUpdatingLocation(true);
+      await enableTracking(requestId, user.uid);
+      
+      // Get initial location and update
+      const location = await getCurrentLocation();
+      if (location) {
+        await updateRiderLocation(requestId, user.uid, location.lat, location.lng);
+      }
+      
+      showToast("Location tracking enabled", "success");
+    } catch (error: any) {
+      console.error("Error enabling tracking:", error);
+      showToast(error.message || "Failed to enable tracking", "error");
+    } finally {
+      setIsUpdatingLocation(false);
+    }
+  };
+
+  const handleDisableTracking = async () => {
+    if (!user || !request) return;
+
+    try {
+      await disableTracking(requestId, user.uid);
+      showToast("Location tracking disabled", "success");
+    } catch (error: any) {
+      console.error("Error disabling tracking:", error);
+      showToast(error.message || "Failed to disable tracking", "error");
+    }
+  };
+
+  // Auto-update location when tracking is enabled
+  useEffect(() => {
+    if (!user || !request) {
+      // Clear interval if conditions not met
+      if (locationUpdateIntervalRef.current) {
+        clearInterval(locationUpdateIntervalRef.current);
+        locationUpdateIntervalRef.current = null;
+      }
+      return;
+    }
+    if (!request.trackingEnabled) {
+      if (locationUpdateIntervalRef.current) {
+        clearInterval(locationUpdateIntervalRef.current);
+        locationUpdateIntervalRef.current = null;
+      }
+      return;
+    }
+    if (request.commuterId !== user.uid) {
+      if (locationUpdateIntervalRef.current) {
+        clearInterval(locationUpdateIntervalRef.current);
+        locationUpdateIntervalRef.current = null;
+      }
+      return;
+    }
+    if (request.status !== "picked" && request.status !== "in_transit") {
+      if (locationUpdateIntervalRef.current) {
+        clearInterval(locationUpdateIntervalRef.current);
+        locationUpdateIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const updateLocation = async () => {
+      try {
+        const location = await getCurrentLocation();
+        if (location) {
+          await updateRiderLocation(requestId, user.uid, location.lat, location.lng);
+        }
+      } catch (error) {
+        console.error("Error updating location:", error);
+      }
+    };
+
+    // Update immediately
+    updateLocation();
+
+    // Update every 30 seconds
+    locationUpdateIntervalRef.current = setInterval(updateLocation, 30000);
+
+    return () => {
+      if (locationUpdateIntervalRef.current) {
+        clearInterval(locationUpdateIntervalRef.current);
+        locationUpdateIntervalRef.current = null;
+      }
+    };
+  }, [user, request?.trackingEnabled, request?.commuterId, request?.status, requestId]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -290,6 +388,11 @@ export default function RequestDetailPage() {
             <div className="bg-white rounded-lg shadow-sm p-4">
               <ParcelTimeline status={request.status} />
             </div>
+
+            {/* Delivery Tracking - Show for senders when tracking is enabled */}
+            {isSender && request.trackingEnabled && (request.status === "picked" || request.status === "in_transit") && (
+              <DeliveryTracking request={request} />
+            )}
 
         <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
           {/* Status - Prominent display for riders */}
@@ -549,20 +652,87 @@ export default function RequestDetailPage() {
             )}
 
             {canStartTransit && (
-              <button
-                onClick={async () => {
-                  try {
-                    await startTransit(requestId);
-                    showToast("Started transit", "success");
-                    // Real-time listener will update automatically
-                  } catch (error) {
-                    showToast("Failed to start transit", "error");
-                  }
-                }}
-                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700"
-              >
-                Start Delivery
-              </button>
+              <div className="space-y-3">
+                <button
+                  onClick={async () => {
+                    try {
+                      await startTransit(requestId);
+                      showToast("Started transit", "success");
+                      // Real-time listener will update automatically
+                    } catch (error) {
+                      showToast("Failed to start transit", "error");
+                    }
+                  }}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700"
+                >
+                  Start Delivery
+                </button>
+
+                {/* Tracking Option */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-gray-900 mb-2">
+                    📍 Enable Location Tracking
+                  </p>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Allow the sender to track your location during delivery. Your location will update automatically every 30 seconds.
+                  </p>
+                  {!request.trackingEnabled ? (
+                    <button
+                      onClick={handleEnableTracking}
+                      disabled={isUpdatingLocation}
+                      className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isUpdatingLocation ? "Enabling..." : "Enable Tracking"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleDisableTracking}
+                      className="w-full bg-gray-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-gray-700"
+                    >
+                      Disable Tracking
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Tracking Controls for in_transit status */}
+            {isCommuter && request.status === "in_transit" && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 mb-1">
+                      📍 Location Tracking
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {request.trackingEnabled 
+                        ? "Your location is being shared with the sender. Updates every 30 seconds."
+                        : "Enable tracking to let the sender see your location during delivery."}
+                    </p>
+                  </div>
+                  {request.trackingEnabled && (
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                      Active
+                    </span>
+                  )}
+                </div>
+                {!request.trackingEnabled ? (
+                  <button
+                    onClick={handleEnableTracking}
+                    disabled={isUpdatingLocation}
+                    className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isUpdatingLocation ? "Enabling..." : "Enable Tracking"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleDisableTracking}
+                    className="w-full bg-gray-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-gray-700"
+                  >
+                    Disable Tracking
+                  </button>
+                )}
+              </div>
             )}
 
             {canDeliver && (
