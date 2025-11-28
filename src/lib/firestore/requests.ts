@@ -379,9 +379,17 @@ export async function startTransit(requestId: string): Promise<void> {
 export async function verifyDropOTP(
   requestId: string,
   otp: string
-): Promise<boolean> {
+): Promise<{ success: boolean; error?: string }> {
   const request = await getRequest(requestId);
-  if (!request) return false;
+  if (!request) return { success: false, error: "Request not found" };
+
+  // Check if payment is confirmed before allowing drop OTP verification
+  if (!request.paymentConfirmed) {
+    return { 
+      success: false, 
+      error: "Payment must be confirmed before completing delivery. Please confirm payment first." 
+    };
+  }
 
   if (request.otpDrop.toString() === otp) {
     const docRef = doc(db, "requests", requestId);
@@ -390,9 +398,92 @@ export async function verifyDropOTP(
       trackingEnabled: false, // Disable tracking when delivery is completed
       updatedAt: serverTimestamp(),
     });
-    return true;
+    return { success: true };
   }
-  return false;
+  return { success: false, error: "Invalid OTP" };
+}
+
+/**
+ * Confirm payment for a delivery request
+ * Can be confirmed by either sender or receiver
+ */
+export async function confirmPayment(
+  requestId: string,
+  userId: string
+): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+  
+  // Check if user is sender or receiver
+  if (request.senderId !== userId && request.commuterId !== userId) {
+    throw new Error("Only sender or receiver can confirm payment");
+  }
+  
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, {
+    paymentConfirmed: true,
+    paymentConfirmedBy: userId,
+    paymentConfirmedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Mark rider as arrived at pickup location
+ */
+export async function markArrivedAtPickup(
+  requestId: string,
+  commuterId: string
+): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+  
+  if (request.commuterId !== commuterId) {
+    throw new Error("Only the assigned rider can mark arrival");
+  }
+  
+  if (!["approved", "waiting_pickup", "pickup_otp_pending"].includes(request.status)) {
+    throw new Error("Can only mark arrival at pickup during pickup phase");
+  }
+  
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, {
+    arrivedAtPickup: true,
+    arrivedAtPickupAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Mark rider as arrived at drop location
+ */
+export async function markArrivedAtDrop(
+  requestId: string,
+  commuterId: string
+): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+  
+  if (request.commuterId !== commuterId) {
+    throw new Error("Only the assigned rider can mark arrival");
+  }
+  
+  if (request.status !== "in_transit") {
+    throw new Error("Can only mark arrival at drop during transit");
+  }
+  
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, {
+    arrivedAtDrop: true,
+    arrivedAtDropAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
 }
 
 /**

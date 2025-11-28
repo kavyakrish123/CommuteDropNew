@@ -82,5 +82,14 @@ export interface DeliveryRequest {
   riderLat?: number | null; // Rider's current latitude
   riderLng?: number | null; // Rider's current longitude
   lastLocationUpdate?: Timestamp | null; // Last time rider location was updated
+  // Payment Status
+  paymentConfirmed?: boolean; // Whether payment has been confirmed
+  paymentConfirmedBy?: string | null; // User ID who confirmed payment (sender or receiver)
+  paymentConfirmedAt?: Timestamp | null; // When payment was confirmed
+  // Arrival Status
+  arrivedAtPickup?: boolean; // Whether rider has arrived at pickup location
+  arrivedAtDrop?: boolean; // Whether rider has arrived at drop location
+  arrivedAtPickupAt?: Timestamp | null; // When rider arrived at pickup
+  arrivedAtDropAt?: Timestamp | null; // When rider arrived at drop
 }
 

@@ -16,6 +16,9 @@ import {
   enableTracking,
   disableTracking,
   updateRiderLocation,
+  confirmPayment,
+  markArrivedAtPickup,
+  markArrivedAtDrop,
 } from "@/lib/firestore/requests";
 import { getUser } from "@/lib/firestore/users";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -41,6 +44,7 @@ import { MobileMenu } from "@/components/ui/MobileMenu";
 import { DeliveryTracking } from "@/components/ui/DeliveryTracking";
 import { getCurrentLocation } from "@/lib/utils/geolocation";
 import { LocationDisplay } from "@/components/ui/LocationDisplay";
+import { PayNowQRDisplay } from "@/components/ui/PayNowQRDisplay";
 
 export default function RequestDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -53,6 +57,8 @@ export default function RequestDetailPage() {
   const [request, setRequest] = useState<DeliveryRequest | null>(null);
   const [senderName, setSenderName] = useState<string>("");
   const [commuterName, setCommuterName] = useState<string>("");
+  const [senderData, setSenderData] = useState<User | null>(null);
+  const [riderData, setRiderData] = useState<User | null>(null);
   const [requestedRider, setRequestedRider] = useState<User | null>(null);
   const [requestedRiders, setRequestedRiders] = useState<Array<{ rider: User; uid: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -94,14 +100,18 @@ export default function RequestDetailPage() {
         setRequest(req);
         setLoading(false);
 
-        // Load sender name
+        // Load sender data
         const sender = await getUser(req.senderId);
         setSenderName(sender?.name || "Unknown");
+        setSenderData(sender);
 
-        // Load commuter name if exists
+        // Load commuter/rider data if exists
         if (req.commuterId) {
           const commuter = await getUser(req.commuterId);
           setCommuterName(commuter?.name || "Unknown");
+          setRiderData(commuter);
+        } else {
+          setRiderData(null);
         }
 
         // Load all requested riders if status is "requested"
@@ -212,39 +222,86 @@ export default function RequestDetailPage() {
     if (!request || !otpType) return;
 
     try {
-      let success = false;
       if (otpType === "pickup") {
-        success = await verifyPickupOTP(requestId, data.otp);
-      } else {
-        success = await verifyDropOTP(requestId, data.otp);
-      }
-
-      if (success) {
-        showToast("OTP verified successfully!", "success");
-        otpForm.reset();
-        setOtpType(null);
-        
-        // Send notification
-        if (notificationsEnabled && user && request) {
-          if (otpType === "pickup") {
+        const success = await verifyPickupOTP(requestId, data.otp);
+        if (success) {
+          showToast("OTP verified successfully!", "success");
+          otpForm.reset();
+          setOtpType(null);
+          
+          // Send notification
+          if (notificationsEnabled && user && request) {
             await notifyPickupEvent(request, user.uid);
             if (request.commuterId) {
               await notifyPickupEvent(request, request.commuterId);
             }
-          } else if (otpType === "drop") {
+          }
+        } else {
+          showToast("Invalid OTP. Please check and try again.", "error");
+        }
+      } else {
+        // Drop OTP - now returns { success, error }
+        const result = await verifyDropOTP(requestId, data.otp);
+        if (result.success) {
+          showToast("OTP verified successfully! Delivery completed.", "success");
+          otpForm.reset();
+          setOtpType(null);
+          
+          // Send notification
+          if (notificationsEnabled && user && request) {
             await notifyDropEvent(request, user.uid);
             if (request.senderId) {
               await notifyDropEvent(request, request.senderId);
             }
           }
+        } else {
+          showToast(result.error || "Invalid OTP. Please check and try again.", "error");
         }
-        // Real-time listener will update automatically
-      } else {
-        showToast("Invalid OTP. Please check and try again.", "error");
       }
-    } catch (error) {
+      // Real-time listener will update automatically
+    } catch (error: any) {
       console.error("Error verifying OTP:", error);
-      showToast("Failed to verify OTP", "error");
+      showToast(error.message || "Failed to verify OTP", "error");
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!user || !request) return;
+
+    if (!confirm("Confirm that payment has been received? This will allow the delivery to be completed.")) {
+      return;
+    }
+
+    try {
+      await confirmPayment(requestId, user.uid);
+      showToast("Payment confirmed successfully!", "success");
+    } catch (error: any) {
+      console.error("Error confirming payment:", error);
+      showToast(error.message || "Failed to confirm payment", "error");
+    }
+  };
+
+  const handleArrivedAtPickup = async () => {
+    if (!user || !request) return;
+
+    try {
+      await markArrivedAtPickup(requestId, user.uid);
+      showToast("Arrival at pickup location marked", "success");
+    } catch (error: any) {
+      console.error("Error marking arrival:", error);
+      showToast(error.message || "Failed to mark arrival", "error");
+    }
+  };
+
+  const handleArrivedAtDrop = async () => {
+    if (!user || !request) return;
+
+    try {
+      await markArrivedAtDrop(requestId, user.uid);
+      showToast("Arrival at drop location marked", "success");
+    } catch (error: any) {
+      console.error("Error marking arrival:", error);
+      showToast(error.message || "Failed to mark arrival", "error");
     }
   };
 
@@ -360,6 +417,10 @@ export default function RequestDetailPage() {
   const canVerifyPickupOTP = isCommuter && (request.status === "waiting_pickup" || request.status === "pickup_otp_pending");
   const canStartTransit = isCommuter && request.status === "picked";
   const canDeliver = isCommuter && request.status === "in_transit";
+  const canMarkArrivedPickup = isCommuter && ["approved", "waiting_pickup", "pickup_otp_pending"].includes(request.status) && !request.arrivedAtPickup;
+  const canMarkArrivedDrop = isCommuter && request.status === "in_transit" && !request.arrivedAtDrop;
+  const canConfirmPayment = (isSender || isCommuter) && request.status === "in_transit" && !request.paymentConfirmed;
+  const showPaymentWarning = request.status === "in_transit" && !request.paymentConfirmed;
   // Chat temporarily disabled
   // const canChat = Boolean((isSender && request.commuterId) || isCommuter);
   // const chatAvailable = canChat && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status);
@@ -515,6 +576,31 @@ export default function RequestDetailPage() {
             </div>
           )}
 
+          {/* PayNow QR Codes - Show when job is active and has price */}
+          {request.priceOffered && request.priceOffered > 0 && 
+           request.commuterId && 
+           ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status) && (
+            <div className="space-y-3 pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-medium text-gray-600 mb-2">Payment Information</h3>
+              {/* Show sender's QR if user is rider */}
+              {isCommuter && senderData?.payNowQR && (
+                <PayNowQRDisplay
+                  qrCodeUrl={senderData.payNowQR}
+                  userName={senderName}
+                  isSender={true}
+                />
+              )}
+              {/* Show rider's QR if user is sender */}
+              {isSender && riderData?.payNowQR && (
+                <PayNowQRDisplay
+                  qrCodeUrl={riderData.payNowQR}
+                  userName={commuterName}
+                  isSender={false}
+                />
+              )}
+            </div>
+          )}
+
           {/* Sender Info */}
           <div>
             <h3 className="text-sm font-medium text-gray-600 mb-1">Posted by</h3>
@@ -574,6 +660,30 @@ export default function RequestDetailPage() {
                 Request to Deliver
               </button>
             )}
+
+                    {/* Arrived at Pickup Button */}
+                    {canMarkArrivedPickup && (
+                      <button
+                        onClick={handleArrivedAtPickup}
+                        className="w-full bg-yellow-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-yellow-600 flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        I've Arrived at Pickup Location
+                      </button>
+                    )}
+
+                    {/* Arrival Status */}
+                    {request.arrivedAtPickup && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-sm font-medium text-green-800">Arrived at pickup location</span>
+                      </div>
+                    )}
 
                     {canPickup && (
                       <div className="space-y-2">
@@ -720,13 +830,122 @@ export default function RequestDetailPage() {
               </div>
             )}
 
+            {/* Arrived at Drop Button */}
+            {canMarkArrivedDrop && (
+              <button
+                onClick={handleArrivedAtDrop}
+                className="w-full bg-yellow-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-yellow-600 flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                I've Arrived at Drop Location
+              </button>
+            )}
+
+            {/* Arrival Status at Drop */}
+            {request.arrivedAtDrop && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm font-medium text-green-800">Arrived at drop location</span>
+              </div>
+            )}
+
+            {/* Payment Confirmation Message */}
+            {showPaymentWarning && (
+              <div className="space-y-4">
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-yellow-900 mb-1">
+                        Payment Required Before Delivery
+                      </p>
+                      <p className="text-sm text-yellow-800 mb-3">
+                        <strong>Important:</strong> The item should only be delivered once payment has been confirmed. 
+                        Either the sender or receiver must confirm payment before the delivery can be completed with OTP.
+                      </p>
+                      {canConfirmPayment && (
+                        <button
+                          onClick={handleConfirmPayment}
+                          className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700"
+                        >
+                          I Confirm Payment Has Been Made
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* PayNow QR Codes */}
+                {request.priceOffered && request.priceOffered > 0 && (
+                  <div className="space-y-3">
+                    {/* Show sender's QR if user is rider */}
+                    {isCommuter && senderData?.payNowQR && (
+                      <PayNowQRDisplay
+                        qrCodeUrl={senderData.payNowQR}
+                        userName={senderName}
+                        isSender={true}
+                      />
+                    )}
+                    {/* Show rider's QR if user is sender */}
+                    {isSender && riderData?.payNowQR && (
+                      <PayNowQRDisplay
+                        qrCodeUrl={riderData.payNowQR}
+                        userName={commuterName}
+                        isSender={false}
+                      />
+                    )}
+                    {/* Show both if user is neither (shouldn't happen, but just in case) */}
+                    {!isSender && !isCommuter && (
+                      <>
+                        {senderData?.payNowQR && (
+                          <PayNowQRDisplay
+                            qrCodeUrl={senderData.payNowQR}
+                            userName={senderName}
+                            isSender={true}
+                          />
+                        )}
+                        {riderData?.payNowQR && (
+                          <PayNowQRDisplay
+                            qrCodeUrl={riderData.payNowQR}
+                            userName={commuterName}
+                            isSender={false}
+                          />
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Payment Confirmed Status */}
+            {request.paymentConfirmed && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-medium text-green-800">
+                  Payment confirmed {request.paymentConfirmedBy === user?.uid ? "by you" : ""}
+                </span>
+              </div>
+            )}
+
             {canDeliver && (
               <div className="space-y-2 bg-green-50 border border-green-200 rounded-xl p-4">
                 <p className="text-sm font-semibold text-gray-900 mb-2">
                   Enter Drop OTP:
                 </p>
                 <p className="text-xs text-gray-600 mb-3">
-                  Enter the 4-digit OTP to complete delivery.
+                  {request.paymentConfirmed 
+                    ? "Enter the 4-digit OTP to complete delivery."
+                    : "⚠️ Payment must be confirmed before completing delivery."}
                 </p>
                 <form
                   onSubmit={(e) => {
