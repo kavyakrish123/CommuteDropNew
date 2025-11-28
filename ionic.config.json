@@ -1,0 +1,8 @@
+{
+  "name": "CommuteDrop",
+  "type": "custom",
+  "integrations": {
+    "capacitor": {}
+  }
+}
+

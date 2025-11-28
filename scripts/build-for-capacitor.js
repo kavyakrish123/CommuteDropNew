@@ -14,9 +14,10 @@ const { execSync } = require('child_process');
 console.log('🔄 Building Next.js app for Capacitor...');
 
 try {
-  // Build Next.js app (regular build)
-  console.log('🔨 Building Next.js app...');
-  execSync('next build', { stdio: 'inherit' });
+  // Build Next.js app with static export for Capacitor
+  console.log('🔨 Building Next.js app with static export...');
+  process.env.CAPACITOR_BUILD = 'true';
+  execSync('next build', { stdio: 'inherit', env: { ...process.env, CAPACITOR_BUILD: 'true' } });
   
   console.log('✅ Build completed successfully!');
   

@@ -141,74 +141,58 @@ npm run start
 
 The production build will be in the `out` directory (static export).
 
-## Capacitor Integration
+## 📱 Ionic Framework + Capacitor Integration
 
-### Initial Setup
+This project uses **Ionic Framework with Capacitor** to build native iOS and Android apps.
 
-1. **Install Capacitor CLI** (if not already installed globally):
-
-```bash
-npm install -g @capacitor/cli
-```
-
-2. **Add Android platform**:
+### Quick Start
 
 ```bash
-npx cap add android
+# Build and sync for both platforms
+npm run cap:build
+
+# Open Android Studio
+npm run cap:open:android
+
+# Open Xcode (macOS only)
+npm run cap:open:ios
 ```
 
-3. **Add iOS platform** (macOS only):
+### Available Commands
 
-```bash
-npx cap add ios
-```
+- `npm run build:capacitor` - Build Next.js app for mobile
+- `npm run cap:sync` - Sync web assets to native projects
+- `npm run cap:copy` - Copy web assets only (faster)
+- `npm run cap:update` - Update native dependencies
+- `npm run cap:open:android` - Open Android Studio
+- `npm run cap:open:ios` - Open Xcode (macOS only)
+- `npm run cap:build` - Build + Sync (all-in-one)
 
-### Building for Mobile
+### Documentation
 
-1. **Build the Next.js app**:
+- **[IONIC_CAPACITOR_SETUP.md](./IONIC_CAPACITOR_SETUP.md)** - Complete setup guide for iOS and Android
+- **[IONIC_APPFLOW_SETUP.md](./IONIC_APPFLOW_SETUP.md)** - Cloud builds, testing, and deployment with Ionic Appflow
+- **[QUICK_BUILD_GUIDE.md](./QUICK_BUILD_GUIDE.md)** - Quick reference for building
+- **[BUILD_APK_GUIDE.md](./BUILD_APK_GUIDE.md)** - Detailed Android APK build guide
 
-```bash
-npm run build
-```
+### Prerequisites
 
-2. **Sync Capacitor** (copies web build to native projects):
+**For Android:**
+- Android Studio
+- Java Development Kit (JDK) 11+
+- Android SDK
 
-```bash
-npx cap sync
-```
+**For iOS (macOS only):**
+- Xcode
+- CocoaPods (`sudo gem install cocoapods`)
 
-### Running on Android
+### Development Workflow
 
-1. **Open Android Studio**:
+1. Make changes to your Next.js app
+2. Run `npm run cap:build` to rebuild and sync
+3. Test in Android Studio or Xcode
 
-```bash
-npx cap open android
-```
-
-2. In Android Studio:
-   - Wait for Gradle sync to complete
-   - Select a device/emulator
-   - Click the "Run" button (▶️)
-
-### Running on iOS (macOS only)
-
-1. **Open Xcode**:
-
-```bash
-npx cap open ios
-```
-
-2. In Xcode:
-   - Select a simulator or device
-   - Click the "Run" button (▶️)
-
-### After Making Changes
-
-Whenever you make changes to your Next.js app:
-
-1. Rebuild the app: `npm run build`
-2. Sync with Capacitor: `npx cap sync`
-3. The native apps will automatically reflect the changes
+For detailed instructions, see [IONIC_CAPACITOR_SETUP.md](./IONIC_CAPACITOR_SETUP.md)
 
 ## Project Structure
 
