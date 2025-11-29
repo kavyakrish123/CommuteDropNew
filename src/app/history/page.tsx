@@ -83,11 +83,11 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#EFFFEE]">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">History</h1>
+      <header className="bg-white shadow-card border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-[#1A1A1A]">History</h1>
           <button
             onClick={() => setMenuOpen(true)}
             className="p-2 text-gray-600 hover:text-gray-900 active:bg-gray-100 rounded-lg transition-colors"
@@ -100,29 +100,31 @@ export default function HistoryPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6 pb-24">
+      <main className="max-w-4xl mx-auto px-6 py-6 pb-24">
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
             {[1, 2, 3].map((i) => (
               <RequestCardSkeleton key={i} />
             ))}
           </div>
         ) : completedRequests.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-lg font-medium text-gray-900 mb-2">No completed deliveries yet</p>
-            <p className="text-sm text-gray-600">Your completed deliveries will appear here</p>
+          <div className="bg-white rounded-soft-lg shadow-card p-12 text-center">
+            <div className="w-16 h-16 bg-[#EFFFEE] rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-[#00C57E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-base font-semibold text-[#1A1A1A] mb-2">No history yet</p>
+            <p className="text-sm text-[#666666]">Completed and expired tasks will appear here</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="mb-4">
-              <p className="text-sm text-gray-600">
-                {completedRequests.length} {completedRequests.length === 1 ? "completed delivery" : "completed deliveries"}
+          <div className="space-y-6">
+            <div className="bg-white rounded-soft-lg shadow-card p-4">
+              <p className="text-sm font-semibold text-[#1A1A1A]">
+                {completedRequests.length} {completedRequests.length === 1 ? "item" : "items"} in history
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
               {completedRequests.map((request) =>
                 request.id ? (
                   <RequestCard

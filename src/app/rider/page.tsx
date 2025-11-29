@@ -172,12 +172,12 @@ export default function RiderDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">
+    <div className="min-h-screen bg-[#EFFFEE]">
+      <header className="bg-white shadow-card border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold">
             <span className="text-[#00C57E]">Pikk</span>
-            <span className="text-gray-900">rr</span>
+            <span className="text-[#1A1A1A]">rr</span>
           </h1>
           <button
             onClick={() => setMenuOpen(true)}
@@ -191,35 +191,37 @@ export default function RiderDashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6 pb-24">
+      <main className="max-w-4xl mx-auto px-6 py-6 pb-24">
         {/* Navigation Tabs */}
-        <div className="flex border-b border-gray-200 mb-6">
-          <Link
-            href="/app"
-            className="flex-1 py-3 text-center font-medium text-gray-500 hover:text-gray-700"
-          >
-            My Requests
-          </Link>
-          <button
-            onClick={() => setActiveTab("active")}
-            className={`flex-1 py-3 text-center font-medium ${
-              activeTab === "active"
-                ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            My Active Tasks ({activeTasks.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("available")}
-            className={`flex-1 py-3 text-center font-medium ${
-              activeTab === "available"
-                ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Available Tasks
-          </button>
+        <div className="bg-white rounded-soft-lg shadow-card mb-6 overflow-hidden">
+          <div className="flex border-b border-gray-200">
+            <Link
+              href="/app"
+              className="flex-1 py-4 text-center font-semibold text-sm text-[#666666] hover:text-[#1A1A1A]"
+            >
+              My Requests
+            </Link>
+            <button
+              onClick={() => setActiveTab("active")}
+              className={`flex-1 py-4 text-center font-semibold text-sm ${
+                activeTab === "active"
+                  ? "text-[#00C57E] border-b-2 border-[#00C57E] bg-[#EFFFEE]"
+                  : "text-[#666666] hover:text-[#1A1A1A]"
+              }`}
+            >
+              My Active Tasks ({activeTasks.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("available")}
+              className={`flex-1 py-4 text-center font-semibold text-sm ${
+                activeTab === "available"
+                  ? "text-[#00C57E] border-b-2 border-[#00C57E] bg-[#EFFFEE]"
+                  : "text-[#666666] hover:text-[#1A1A1A]"
+              }`}
+            >
+              Available Tasks
+            </button>
+          </div>
         </div>
 
         {/* Filters for Available Tasks */}

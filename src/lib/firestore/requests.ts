@@ -38,9 +38,9 @@ export async function createRequest(
   const otpPickup = generateOTP();
   const otpDrop = generateOTP();
 
-  // Set expiry to 60 minutes from now
+  // Set expiry to 1 day from now
   const expiresAt = new Date();
-  expiresAt.setMinutes(expiresAt.getMinutes() + 60);
+  expiresAt.setDate(expiresAt.getDate() + 1);
 
   const requestData: Omit<DeliveryRequest, "id"> = {
     senderId,
@@ -110,12 +110,28 @@ export async function getAvailableRequests(
           } as DeliveryRequest)
       )
       .filter((req) => {
-        // Filter out expired requests
+        // Filter out expired requests (older than 1 day)
+        if (req.createdAt) {
+          const createdDate = req.createdAt.toDate();
+          const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 1 day ago
+          
+          if (createdDate < oneDayAgo && req.status === "created") {
+            // Mark as expired in database (async, don't wait)
+            if (req.id) {
+              updateDoc(doc(db, "requests", req.id), {
+                status: "expired",
+                updatedAt: serverTimestamp(),
+              }).catch(console.error);
+            }
+            return false;
+          }
+        }
+        // Also check expiresAt field for backward compatibility
         if (req.expiresAt) {
           const expiryDate = req.expiresAt.toDate();
-          if (expiryDate < now) {
+          if (expiryDate < now && req.status === "created") {
             // Mark as expired in database (async, don't wait)
-            if (req.id && req.status === "created") {
+            if (req.id) {
               updateDoc(doc(db, "requests", req.id), {
                 status: "expired",
                 updatedAt: serverTimestamp(),
@@ -673,12 +689,28 @@ export function subscribeToAvailableRequests(
             } as DeliveryRequest)
         )
         .filter((req) => {
-          // Filter out expired requests
+          // Filter out expired requests (older than 1 day)
+          if (req.createdAt) {
+            const createdDate = req.createdAt.toDate();
+            const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 1 day ago
+            
+            if (createdDate < oneDayAgo && req.status === "created") {
+              // Mark as expired in database (async, don't wait)
+              if (req.id) {
+                updateDoc(doc(db, "requests", req.id), {
+                  status: "expired",
+                  updatedAt: serverTimestamp(),
+                }).catch(console.error);
+              }
+              return false;
+            }
+          }
+          // Also check expiresAt field for backward compatibility
           if (req.expiresAt) {
             const expiryDate = req.expiresAt.toDate();
-            if (expiryDate < now) {
+            if (expiryDate < now && req.status === "created") {
               // Mark as expired in database (async, don't wait)
-              if (req.id && req.status === "created") {
+              if (req.id) {
                 updateDoc(doc(db, "requests", req.id), {
                   status: "expired",
                   updatedAt: serverTimestamp(),
@@ -738,23 +770,21 @@ export function subscribeToRiderActiveTasks(
   );
 }
 
-// Subscribe to completed requests for history
+// Subscribe to completed and expired requests for history
 export function subscribeToCompletedRequests(
   userId: string,
   callback: (requests: DeliveryRequest[]) => void,
   onError?: (error: Error) => void
 ): Unsubscribe {
-  // Get requests where user is either sender or commuter and status is completed
+  // Get requests where user is either sender or commuter and status is completed or expired
   const senderQuery = query(
     collection(db, "requests"),
-    where("senderId", "==", userId),
-    where("status", "==", "completed")
+    where("senderId", "==", userId)
   );
   
   const commuterQuery = query(
     collection(db, "requests"),
-    where("commuterId", "==", userId),
-    where("status", "==", "completed")
+    where("commuterId", "==", userId)
   );
   
   let senderUnsubscribe: (() => void) | null = null;
@@ -778,10 +808,10 @@ export function subscribeToCompletedRequests(
             id: doc.id,
             ...doc.data(),
           } as DeliveryRequest)
-      );
+      ).filter((req) => req.status === "completed" || req.status === "expired");
       
       // Remove old sender requests and add new ones
-      const filtered = allRequests.filter((req) => req.senderId !== userId || req.status !== "completed");
+      const filtered = allRequests.filter((req) => req.senderId !== userId || (req.status !== "completed" && req.status !== "expired"));
       allRequests.length = 0;
       allRequests.push(...filtered, ...senderRequests);
       updateCallback();
@@ -803,10 +833,10 @@ export function subscribeToCompletedRequests(
             id: doc.id,
             ...doc.data(),
           } as DeliveryRequest)
-      );
+      ).filter((req) => req.status === "completed" || req.status === "expired");
       
       // Remove old commuter requests and add new ones
-      const senderRequests = allRequests.filter((req) => req.senderId === userId && req.status === "completed");
+      const senderRequests = allRequests.filter((req) => req.senderId === userId && (req.status === "completed" || req.status === "expired"));
       allRequests.length = 0;
       allRequests.push(...senderRequests, ...commuterRequests);
       updateCallback();

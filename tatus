@@ -1,0 +1,27 @@
+[33mcommit b38927d0f756a4f88b995af39ec091a63cae114e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Kavya <kavya>
+Date:   Sat Nov 29 21:40:52 2025 +0800
+
+    Complete Figma design implementation - all screen components - Implement splash screen and 3 onboarding screens - Implement login/authentication screen - Implement sender journey (home + 5-step send item flow) - Implement commuter dashboard and accepted task screen - Implement tracking, chat, and profile screens - Implement safety screens (restricted items, beta disclaimer) - Add design system showcase component - All screens use Figma design system colors and styling
+
+ .../additional-screens/AcceptedTaskScreen.tsx      | 61 [32m++++++++++++++++++[m
+ .../components/additional-screens/ChatScreen.tsx   | 63 [32m+++++++++++++++++++[m
+ .../additional-screens/CommuterDashboard.tsx       | 73 [32m++++++++++++++++++++++[m
+ .../additional-screens/ProfileScreen.tsx           | 71 [32m+++++++++++++++++++++[m
+ .../additional-screens/TrackingScreen.tsx          | 49 [32m+++++++++++++++[m
+ .../design-showcase/DesignSystemShowcase.tsx       | 58 [32m+++++++++++++++++[m
+ FigmaDesigns/components/design-showcase/index.ts   |  2 [32m+[m
+ .../safety-screens/BetaDisclaimerScreen.tsx        | 60 [32m++++++++++++++++++[m
+ .../safety-screens/RestrictedItemsScreen.tsx       | 56 [32m+++++++++++++++++[m
+ .../components/screens/HomeSenderScreen.tsx        | 57 [32m+++++++++++++++++[m
+ FigmaDesigns/components/screens/LoginScreen.tsx    | 50 [32m+++++++++++++++[m
+ .../components/screens/OnboardingScreen1.tsx       | 45 [32m+++++++++++++[m
+ .../components/screens/OnboardingScreen2.tsx       | 45 [32m+++++++++++++[m
+ .../components/screens/OnboardingScreen3.tsx       | 45 [32m+++++++++++++[m
+ FigmaDesigns/components/screens/SendItemStep1.tsx  | 65 [32m+++++++++++++++++++[m
+ FigmaDesigns/components/screens/SendItemStep2.tsx  | 64 [32m+++++++++++++++++++[m
+ FigmaDesigns/components/screens/SendItemStep3.tsx  | 64 [32m+++++++++++++++++++[m
+ FigmaDesigns/components/screens/SendItemStep4.tsx  | 63 [32m+++++++++++++++++++[m
+ FigmaDesigns/components/screens/SendItemStep5.tsx  | 63 [32m+++++++++++++++++++[m
+ FigmaDesigns/components/screens/SplashScreen.tsx   | 27 [32m++++++++[m
+ 20 files changed, 1081 insertions(+)

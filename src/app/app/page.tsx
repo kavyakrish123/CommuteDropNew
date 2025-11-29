@@ -192,13 +192,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header - Grab Style */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+    <div className="min-h-screen bg-[#EFFFEE]">
+      {/* Header */}
+      <header className="bg-white shadow-card border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">
             <span className="text-[#00C57E]">Pikk</span>
-            <span className="text-gray-900">rr</span>
+            <span className="text-[#1A1A1A]">rr</span>
           </h1>
           <button
             onClick={() => setMenuOpen(true)}
@@ -212,15 +212,16 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-4 pb-24">
-        {/* Tabs - Unified Dashboard */}
-        <div className="flex border-b border-gray-200 mb-4 -mx-4 px-4 overflow-x-auto">
+      <main className="max-w-4xl mx-auto px-6 py-6 pb-24">
+        {/* Tabs */}
+        <div className="bg-white rounded-soft-lg shadow-card mb-6 overflow-hidden">
+          <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveTab("my-requests")}
-            className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
+            className={`flex-1 py-4 text-center font-semibold text-sm transition-colors duration-200 ${
               activeTab === "my-requests"
-                ? "text-[#00C57E] border-b-2 border-[#00C57E]"
-                : "text-gray-500 active:text-gray-700"
+                ? "text-[#00C57E] border-b-2 border-[#00C57E] bg-[#EFFFEE]"
+                : "text-[#666666] active:text-[#1A1A1A]"
             }`}
           >
             Requests ({myRequests.length})
@@ -232,20 +233,20 @@ export default function DashboardPage() {
           </button>
           <button
             onClick={() => setActiveTab("my-tasks")}
-            className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
+            className={`flex-1 py-4 text-center font-semibold text-sm transition-colors duration-200 ${
               activeTab === "my-tasks"
-                ? "text-[#00C57E] border-b-2 border-[#00C57E]"
-                : "text-gray-500 active:text-gray-700"
+                ? "text-[#00C57E] border-b-2 border-[#00C57E] bg-[#EFFFEE]"
+                : "text-[#666666] active:text-[#1A1A1A]"
             }`}
           >
             Tasks ({myActiveTasks.length})
           </button>
           <button
             onClick={() => setActiveTab("available")}
-            className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
+            className={`flex-1 py-4 text-center font-semibold text-sm transition-colors duration-200 ${
               activeTab === "available"
-                ? "text-[#00C57E] border-b-2 border-[#00C57E]"
-                : "text-gray-500 active:text-gray-700"
+                ? "text-[#00C57E] border-b-2 border-[#00C57E] bg-[#EFFFEE]"
+                : "text-[#666666] active:text-[#1A1A1A]"
             }`}
           >
             Available
@@ -282,9 +283,9 @@ export default function DashboardPage() {
 
         {/* Filters */}
         {activeTab === "available" && (
-          <div className="mb-4 space-y-3">
+          <div className="bg-white rounded-soft-lg shadow-card p-4 mb-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                 Location
               </label>
               {userLocation ? (
@@ -303,26 +304,25 @@ export default function DashboardPage() {
                       if (location) {
                         setUserLocation(location);
                         setLocationError(null);
-                        // Real-time listener will update automatically
                       } else {
                         setLocationError("Location access denied. Please enable location in your browser settings.");
                       }
                     }}
-                    className="w-full px-4 py-2.5 bg-[#00C57E] text-white rounded-soft hover:bg-[#00A869] active:bg-[#00995A] active:scale-[0.98] transition-all duration-150 text-sm font-medium"
+                    className="w-full px-4 py-2.5 bg-[#00C57E] text-white rounded-soft hover:bg-[#00A869] active:bg-[#00995A] active:scale-[0.98] transition-all duration-150 text-sm font-semibold shadow-card"
                   >
                     Use My Location
                   </button>
                   {locationError && (
                     <p className="text-xs text-red-600">{locationError}</p>
                   )}
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-[#666666]">
                     Enable location for nearby tasks
                   </p>
                 </div>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                 Filter by Pincode
               </label>
               <input
@@ -330,16 +330,15 @@ export default function DashboardPage() {
                 placeholder="Enter pincode..."
                 value={searchPincode}
                 onChange={(e) => {
-                  // Allow full pincode input (digits only, max 6 digits)
                   const value = e.target.value.replace(/\D/g, '').slice(0, 6);
                   setSearchPincode(value);
                 }}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-base"
+                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-soft-lg focus:border-[#00C57E] focus:outline-none focus:ring-2 focus:ring-[#00C57E]/20 text-base"
               />
               {searchPincode && (
                 <button
                   onClick={() => setSearchPincode("")}
-                  className="mt-1 text-sm text-indigo-600 hover:text-indigo-700"
+                  className="mt-1 text-sm text-[#00C57E] hover:text-[#00A869]"
                 >
                   Clear filter
                 </button>
@@ -351,14 +350,10 @@ export default function DashboardPage() {
 
         {/* Ethical Warning */}
         {activeTab === "my-requests" && (
-          <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded-xl">
-            <div className="flex">
-              <div className="ml-3">
-                <p className="text-sm text-red-700">
-                  <strong>⚠️ Important:</strong> Only create tasks you need. No-shows may result in restrictions.
-                </p>
-              </div>
-            </div>
+          <div className="mb-6 bg-red-50 border-l-4 border-red-400 rounded-soft-lg p-4">
+            <p className="text-sm text-red-700">
+              <strong>⚠️ Important:</strong> Only create tasks you need. No-shows may result in restrictions.
+            </p>
           </div>
         )}
 
@@ -373,11 +368,23 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : myRequests.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No requests yet. Create one!</p>
+                <div className="bg-white rounded-soft-lg shadow-card p-12 text-center">
+                  <div className="w-16 h-16 bg-[#EFFFEE] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-[#00C57E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <p className="text-base font-semibold text-[#1A1A1A] mb-2">No requests yet</p>
+                  <p className="text-sm text-[#666666] mb-4">Create your first request!</p>
+                  <button
+                    onClick={() => router.push("/requests/create")}
+                    className="px-6 py-2.5 bg-[#00C57E] text-white rounded-soft-lg font-semibold shadow-card"
+                  >
+                    Create Request
+                  </button>
                 </div>
               ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
                   {myRequests.map((request) =>
                     request.id ? (
                       <RequestCard 
@@ -412,11 +419,17 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : myActiveTasks.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No active tasks. Find tasks in Available tab.</p>
+                <div className="bg-white rounded-soft-lg shadow-card p-12 text-center">
+                  <div className="w-16 h-16 bg-[#EFFFEE] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-[#00C57E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <p className="text-base font-semibold text-[#1A1A1A] mb-2">No active tasks</p>
+                  <p className="text-sm text-[#666666]">Find tasks in Available tab</p>
                 </div>
               ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
                   {myActiveTasks.map((task) =>
                     task.id ? (
                       <RequestCard key={task.id} request={task} currentUserId={user.uid} />
@@ -436,19 +449,25 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : availableRequests.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No available tasks at the moment.</p>
+                <div className="bg-white rounded-soft-lg shadow-card p-12 text-center">
+                  <div className="w-16 h-16 bg-[#EFFFEE] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-[#00C57E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                  </div>
+                  <p className="text-base font-semibold text-[#1A1A1A] mb-2">No available tasks</p>
+                  <p className="text-sm text-[#666666] mb-4">Check back later or adjust filters</p>
                   {searchPincode && (
                     <button
                       onClick={() => setSearchPincode("")}
-                      className="mt-2 text-sm text-[#00C57E] hover:text-[#00A869]"
+                      className="px-4 py-2 text-sm text-[#00C57E] hover:text-[#00A869] font-semibold"
                     >
                       Clear filter
                     </button>
                   )}
                 </div>
               ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
                   {availableRequests.map((request) =>
                     request.id ? (
                       <RequestCard
@@ -467,10 +486,10 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Floating Action Button - Grab Style */}
+      {/* Floating Action Button */}
       <button
         onClick={() => router.push("/requests/create")}
-        className="fixed bottom-6 right-6 bg-[#00C57E] text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-card hover:bg-[#00A869] active:bg-[#00995A] active:scale-95 transition-all duration-150 z-50"
+        className="fixed bottom-6 right-6 bg-[#00C57E] text-white w-16 h-16 rounded-full flex items-center justify-center text-3xl font-bold shadow-card-lg hover:bg-[#00A869] active:bg-[#00995A] active:scale-95 transition-all duration-150 z-50"
         style={{ WebkitTapHighlightColor: 'transparent' }}
         aria-label="Create new request"
       >
