@@ -20,14 +20,18 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  /* Grab-like color scheme */
-  --grab-green: #00B14F;
-  --grab-green-dark: #009640;
-  --grab-green-light: #E6F7ED;
-  --grab-orange: #FF6B35;
-  --grab-gray: #F5F5F5;
-  --grab-text: #1A1A1A;
-  --grab-text-light: #666666;
+  /* Pikkrr Design System Colors from Figma */
+  --pikkrr-green: #00C57E; /* Emerald Green */
+  --pikkrr-green-dark: #00A869;
+  --pikkrr-green-light: #EFFFEE; /* Light Mint */
+  --pikkrr-dark: #1A1A1A; /* Dark Gray */
+  --pikkrr-text: #1A1A1A;
+  --pikkrr-text-light: #666666;
+  --pikkrr-gray: #F5F5F5;
+  
+  /* Card shadows for floating effect */
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-card-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 @media (prefers-color-scheme: dark) {

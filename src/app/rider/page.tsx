@@ -176,7 +176,7 @@ export default function RiderDashboardPage() {
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
           <h1 className="text-xl font-bold text-gray-900">
-            <span className="text-[#00B14F]">Pikk</span>
+            <span className="text-[#00C57E]">Pikk</span>
             <span className="text-gray-900">rr</span>
           </h1>
           <button

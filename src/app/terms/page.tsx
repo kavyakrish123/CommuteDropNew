@@ -120,7 +120,7 @@ export default function TermsPage() {
           <div className="flex gap-4 pt-6 border-t border-gray-200">
             <Link
               href="/auth"
-              className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg text-center font-semibold hover:bg-indigo-700"
+              className="flex-1 bg-[#00C57E] text-white py-3 px-4 rounded-soft text-center font-semibold hover:bg-[#00A869]"
             >
               I Understand, Continue to Sign Up
             </Link>

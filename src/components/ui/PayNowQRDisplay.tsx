@@ -28,7 +28,7 @@ export function PayNowQRDisplay({ qrCodeUrl, userName, isSender = false }: PayNo
         </div>
         <button
           onClick={() => setShowQR(!showQR)}
-          className="px-4 py-2 bg-[#00B14F] text-white rounded-lg text-sm font-medium hover:bg-[#009640] transition-colors"
+          className="px-4 py-2 bg-[#00C57E] text-white rounded-soft text-sm font-medium hover:bg-[#00A869] transition-colors"
         >
           {showQR ? "Hide QR" : "Show QR"}
         </button>

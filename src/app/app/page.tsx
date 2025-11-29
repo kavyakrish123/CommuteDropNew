@@ -197,7 +197,7 @@ export default function DashboardPage() {
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">
-            <span className="text-[#00B14F]">Pikk</span>
+            <span className="text-[#00C57E]">Pikk</span>
             <span className="text-gray-900">rr</span>
           </h1>
           <button
@@ -219,7 +219,7 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("my-requests")}
             className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
               activeTab === "my-requests"
-                ? "text-[#00B14F] border-b-2 border-[#00B14F]"
+                ? "text-[#00C57E] border-b-2 border-[#00C57E]"
                 : "text-gray-500 active:text-gray-700"
             }`}
           >
@@ -234,7 +234,7 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("my-tasks")}
             className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
               activeTab === "my-tasks"
-                ? "text-[#00B14F] border-b-2 border-[#00B14F]"
+                ? "text-[#00C57E] border-b-2 border-[#00C57E]"
                 : "text-gray-500 active:text-gray-700"
             }`}
           >
@@ -244,7 +244,7 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("available")}
             className={`flex-1 py-3 text-center font-medium text-sm transition-colors duration-200 ${
               activeTab === "available"
-                ? "text-[#00B14F] border-b-2 border-[#00B14F]"
+                ? "text-[#00C57E] border-b-2 border-[#00C57E]"
                 : "text-gray-500 active:text-gray-700"
             }`}
           >
@@ -288,7 +288,7 @@ export default function DashboardPage() {
                 Location
               </label>
               {userLocation ? (
-                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <div className="flex items-center gap-2 text-sm text-[#00C57E]">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -308,7 +308,7 @@ export default function DashboardPage() {
                         setLocationError("Location access denied. Please enable location in your browser settings.");
                       }
                     }}
-                    className="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.98] transition-all duration-150 text-sm font-medium"
+                    className="w-full px-4 py-2.5 bg-[#00C57E] text-white rounded-soft hover:bg-[#00A869] active:bg-[#00995A] active:scale-[0.98] transition-all duration-150 text-sm font-medium"
                   >
                     Use My Location
                   </button>
@@ -441,7 +441,7 @@ export default function DashboardPage() {
                   {searchPincode && (
                     <button
                       onClick={() => setSearchPincode("")}
-                      className="mt-2 text-sm text-indigo-600 hover:text-indigo-700"
+                      className="mt-2 text-sm text-[#00C57E] hover:text-[#00A869]"
                     >
                       Clear filter
                     </button>
@@ -470,7 +470,7 @@ export default function DashboardPage() {
       {/* Floating Action Button - Grab Style */}
       <button
         onClick={() => router.push("/requests/create")}
-        className="fixed bottom-6 right-6 bg-[#00B14F] text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-[#009640] active:bg-[#008530] active:scale-95 transition-all duration-150 z-50"
+        className="fixed bottom-6 right-6 bg-[#00C57E] text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-card hover:bg-[#00A869] active:bg-[#00995A] active:scale-95 transition-all duration-150 z-50"
         style={{ WebkitTapHighlightColor: 'transparent' }}
         aria-label="Create new request"
       >

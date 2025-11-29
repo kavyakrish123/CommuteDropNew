@@ -292,7 +292,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
       <div className="space-y-6 animate-fadeIn">
         {/* Big OTP Icon */}
         <div className="flex justify-center">
-          <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+          <div className="w-24 h-24 bg-[#00C57E] rounded-full flex items-center justify-center shadow-card">
             <svg
               className="w-12 h-12 text-white"
               fill="none"
@@ -333,7 +333,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
               maxLength={6}
               placeholder="000000"
               autoFocus
-              className="w-full px-6 py-4 text-center text-3xl font-bold tracking-widest border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-200 bg-white"
+              className="w-full px-6 py-4 text-center text-3xl font-bold tracking-widest border-2 border-gray-300 rounded-soft-lg focus:ring-4 focus:ring-[#00C57E]/20 focus:border-[#00C57E] transition-all duration-200 bg-white"
               style={{ letterSpacing: "0.5em" }}
               onInput={(e) => {
                 // Only allow digits
@@ -352,7 +352,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-2xl font-bold text-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all duration-150 shadow-lg shadow-green-500/30"
+            className="w-full bg-[#00C57E] text-white py-4 px-6 rounded-soft-lg font-bold text-lg hover:bg-[#00A869] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all duration-150 shadow-card"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -385,7 +385,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
     <div className="space-y-6 animate-fadeIn">
       {/* Big Phone Icon */}
       <div className="flex justify-center">
-        <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+          <div className="w-24 h-24 bg-[#00C57E] rounded-full flex items-center justify-center shadow-card">
           <svg
             className="w-12 h-12 text-white"
             fill="none"
@@ -416,7 +416,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
           <label className="block text-sm font-semibold text-gray-700 mb-3">
             Phone Number
           </label>
-          <div className="flex rounded-2xl overflow-hidden border-2 border-gray-300 focus-within:border-green-500 focus-within:ring-4 focus-within:ring-green-500/20 transition-all duration-200 bg-white">
+          <div className="flex rounded-soft-lg overflow-hidden border-2 border-gray-300 focus-within:border-[#00C57E] focus-within:ring-4 focus-within:ring-[#00C57E]/20 transition-all duration-200 bg-white">
             <span className="inline-flex items-center px-4 bg-gray-50 text-gray-700 font-semibold text-lg border-r-2 border-gray-300">
               +65
             </span>
@@ -453,7 +453,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-2xl font-bold text-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all duration-150 shadow-lg shadow-green-500/30"
+          className="w-full bg-[#00C57E] text-white py-4 px-6 rounded-soft-lg font-bold text-lg hover:bg-[#00A869] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all duration-150 shadow-card"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

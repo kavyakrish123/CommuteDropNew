@@ -28,7 +28,7 @@ export function RequestCard({
   const isMyTask = currentUserId && request.commuterId === currentUserId;
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 flex flex-col h-full min-h-[480px] active:scale-[0.98] transition-transform duration-150 overflow-hidden">
+    <div className="bg-white rounded-soft shadow-card border border-gray-200 flex flex-col h-full min-h-[480px] active:scale-[0.98] transition-transform duration-150 overflow-hidden">
       {/* Header - Status Bar */}
       <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -107,7 +107,7 @@ export function RequestCard({
         {request.priceOffered && (
           <div className="flex-shrink-0 pt-2 border-t border-gray-100">
             <p className="text-xs text-gray-500 font-medium mb-0.5">PRICE</p>
-            <p className="text-xl font-bold text-green-600">${request.priceOffered}</p>
+            <p className="text-xl font-bold text-[#00C57E]">${request.priceOffered}</p>
           </div>
         )}
       </div>
@@ -118,7 +118,7 @@ export function RequestCard({
           {request.id && (
             <Link
               href={`/requests/${request.id}`}
-              className="flex-1 text-center bg-indigo-600 text-white py-2.5 px-4 rounded-xl text-sm font-medium hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.98] transition-all duration-150 min-h-[44px] flex items-center justify-center"
+              className="flex-1 text-center bg-[#00C57E] text-white py-2.5 px-4 rounded-soft text-sm font-medium hover:bg-[#00A869] active:bg-[#00995A] active:scale-[0.98] transition-all duration-150 min-h-[44px] flex items-center justify-center"
             >
               View
             </Link>
@@ -126,7 +126,7 @@ export function RequestCard({
           {showActions && onAccept && request.status === "created" && (
             <button
               onClick={onAccept}
-              className="flex-1 bg-green-600 text-white py-2.5 px-4 rounded-xl text-sm font-medium hover:bg-green-700 active:bg-green-800 active:scale-[0.98] transition-all duration-150 min-h-[44px]"
+              className="flex-1 bg-[#00C57E] text-white py-2.5 px-4 rounded-soft text-sm font-medium hover:bg-[#00A869] active:bg-[#00995A] active:scale-[0.98] transition-all duration-150 min-h-[44px]"
             >
               Request to Deliver
             </button>

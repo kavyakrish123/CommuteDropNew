@@ -9,11 +9,11 @@ export default function AuthPage() {
   const { toasts, showToast, removeToast } = useToast();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-green-50 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-[#EFFFEE] px-4 py-8">
       <div className="max-w-md w-full">
         {/* Logo/Brand Section */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-600 to-green-700 rounded-3xl shadow-lg mb-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#00C57E] rounded-soft-lg shadow-card mb-4">
             <svg
               className="w-12 h-12 text-white"
               fill="none"
@@ -28,12 +28,12 @@ export default function AuthPage() {
               />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Pikkrr</h1>
-          <p className="text-gray-600">Earn from your commute</p>
+          <h1 className="text-4xl font-bold text-[#1A1A1A] mb-2">Pikkrr</h1>
+          <p className="text-[#666666]">Earn from your commute</p>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8 space-y-6 border border-gray-100">
+        <div className="bg-white rounded-soft-lg shadow-card-lg p-8 space-y-6">
           {/* Phone Auth Form */}
           <PhoneAuthForm onError={(msg) => showToast(msg, "error")} />
 
@@ -41,7 +41,7 @@ export default function AuthPage() {
           <div className="pt-4 border-t border-gray-200">
             <Link
               href="/terms"
-              className="text-sm text-center text-gray-600 hover:text-green-600 active:text-green-700 block transition-colors duration-150"
+              className="text-sm text-center text-[#666666] hover:text-[#00C57E] active:text-[#00A869] block transition-colors duration-150"
             >
               By continuing, you agree to Terms & Policies
             </Link>
