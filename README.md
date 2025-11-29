@@ -1,6 +1,6 @@
-# CommuteDrop
+# Pikkrr
 
-**CommuteDrop** is a peer-to-peer "deliver on the way" mobile and web application. Senders create delivery requests, and commuters (regular users traveling anyway) can see open requests near them and accept one. The app uses OTP-based confirmation at pickup and drop points.
+**Pikkrr** is a peer-to-peer delivery platform that transforms your daily commute into passive income. The platform connects commuters (MRT, BUS, walkers, or joggers) with package senders for eco-friendly, cost-effective deliveries along existing routes. Senders create delivery requests, and commuters can see open requests near them and accept one. The app uses OTP-based confirmation at pickup and drop points.
 
 > Auto-deployment test
 

@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.commutedrop.app',
-  appName: 'CommuteDrop',
+  appId: 'com.pikkrr.app',
+  appName: 'Pikkrr',
   webDir: 'out', // Use static export directory
   server: {
     androidScheme: 'https',

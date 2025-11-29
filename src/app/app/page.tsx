@@ -197,8 +197,8 @@ export default function DashboardPage() {
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">
-            <span className="text-[#00B14F]">Commute</span>
-            <span className="text-gray-900">Drop</span>
+            <span className="text-[#00B14F]">Pikk</span>
+            <span className="text-gray-900">rr</span>
           </h1>
           <button
             onClick={() => setMenuOpen(true)}
@@ -223,7 +223,7 @@ export default function DashboardPage() {
                 : "text-gray-500 active:text-gray-700"
             }`}
           >
-            My Requests ({myRequests.length})
+            Requests ({myRequests.length})
             {requestedTasks.length > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-semibold leading-none text-white bg-red-500 rounded-full">
                 {requestedTasks.length}
@@ -238,7 +238,7 @@ export default function DashboardPage() {
                 : "text-gray-500 active:text-gray-700"
             }`}
           >
-            My Tasks ({myActiveTasks.length})
+            Tasks ({myActiveTasks.length})
           </button>
           <button
             onClick={() => setActiveTab("available")}
@@ -280,12 +280,12 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Filters for Available Tasks */}
+        {/* Filters */}
         {activeTab === "available" && (
           <div className="mb-4 space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Your Location
+                Location
               </label>
               {userLocation ? (
                 <div className="flex items-center gap-2 text-sm text-green-600">
@@ -293,7 +293,7 @@ export default function DashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span>Location detected - showing tasks sorted by distance (within 10km)</span>
+                  <span>Location detected - sorted by distance</span>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -316,18 +316,18 @@ export default function DashboardPage() {
                     <p className="text-xs text-red-600">{locationError}</p>
                   )}
                   <p className="text-xs text-gray-500">
-                    Enable location to see tasks sorted by distance from you
+                    Enable location for nearby tasks
                   </p>
                 </div>
               )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Filter by Pickup Pincode
+                Filter by Pincode
               </label>
               <input
                 type="text"
-                placeholder="Filter by pickup pincode (e.g., 123456)..."
+                placeholder="Enter pincode..."
                 value={searchPincode}
                 onChange={(e) => {
                   // Allow full pincode input (digits only, max 6 digits)
@@ -355,8 +355,7 @@ export default function DashboardPage() {
             <div className="flex">
               <div className="ml-3">
                 <p className="text-sm text-red-700">
-                  <strong>⚠️ Important:</strong> It is unethical to create tasks and not show up when a rider arrives. 
-                  Please only create tasks you genuinely need delivered. No-shows may result in account restrictions.
+                  <strong>⚠️ Important:</strong> Only create tasks you need. No-shows may result in restrictions.
                 </p>
               </div>
             </div>
@@ -375,7 +374,7 @@ export default function DashboardPage() {
                 </div>
               ) : myRequests.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                  <p>No requests yet. Create your first request!</p>
+                  <p>No requests yet. Create one!</p>
                 </div>
               ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
@@ -414,7 +413,7 @@ export default function DashboardPage() {
                 </div>
               ) : myActiveTasks.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                  <p>No active tasks. Request a task from the Available Tasks tab.</p>
+                  <p>No active tasks. Find tasks in Available tab.</p>
                 </div>
               ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">

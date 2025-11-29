@@ -17,12 +17,12 @@ if (!firebaseConfig.projectId) {
   messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
     
-    const notificationTitle = payload.notification?.title || 'CommuteDrop';
+    const notificationTitle = payload.notification?.title || 'Pikkrr';
     const notificationOptions = {
       body: payload.notification?.body || '',
       icon: '/icon-192x192.png',
       badge: '/icon-192x192.png',
-      tag: payload.data?.requestId || 'commutedrop',
+      tag: payload.data?.requestId || 'pikkrr',
       data: payload.data || {},
       requireInteraction: payload.data?.requireInteraction === 'true',
       actions: payload.data?.actions ? JSON.parse(payload.data.actions) : [],

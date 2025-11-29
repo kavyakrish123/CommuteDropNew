@@ -23,7 +23,7 @@ export default function TermsPage() {
             </h2>
             <div className="space-y-3 text-gray-700">
               <p>
-                <strong>CommuteDrop</strong> is a <strong>peer-to-peer marketplace</strong> that
+                <strong>Pikkrr</strong> is a <strong>peer-to-peer marketplace</strong> that
                 connects senders with commuters. We are <strong>NOT a logistics company</strong>.
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
@@ -100,7 +100,7 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Disclaimers</h2>
             <div className="space-y-3 text-gray-700">
               <p>
-                <strong>CommuteDrop is not responsible for:</strong>
+                <strong>Pikkrr is not responsible for:</strong>
               </p>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Item loss, damage, or delays</li>
@@ -111,7 +111,7 @@ export default function TermsPage() {
               </ul>
               <p className="mt-4">
                 By using this platform, you agree to use it at your own risk and acknowledge that
-                CommuteDrop acts only as a connection platform.
+                Pikkrr acts only as a connection platform.
               </p>
             </div>
           </section>

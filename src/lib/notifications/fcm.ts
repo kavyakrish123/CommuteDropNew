@@ -82,11 +82,11 @@ export function setupForegroundMessageListener(
       
       // Show notification manually in foreground
       if (payload.notification) {
-        new Notification(payload.notification.title || "CommuteDrop", {
+        new Notification(payload.notification.title || "Pikkrr", {
           body: payload.notification.body || "",
           icon: "/icon-192x192.png",
           badge: "/icon-192x192.png",
-          tag: payload.data?.requestId || "commutedrop",
+          tag: payload.data?.requestId || "pikkrr",
           data: payload.data || {},
         });
       }

@@ -28,8 +28,8 @@ export default function AuthPage() {
               />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">CommuteDrop</h1>
-          <p className="text-gray-600 text-lg">Deliver on the way</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Pikkrr</h1>
+          <p className="text-gray-600">Earn from your commute</p>
         </div>
 
         {/* Auth Card */}
@@ -43,7 +43,7 @@ export default function AuthPage() {
               href="/terms"
               className="text-sm text-center text-gray-600 hover:text-green-600 active:text-green-700 block transition-colors duration-150"
             >
-              By continuing, you agree to our Terms & Policies
+              By continuing, you agree to Terms & Policies
             </Link>
           </div>
         </div>

@@ -75,7 +75,7 @@ if (!fs.existsSync(path.join(OUT_DIR, 'index.html'))) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CommuteDrop</title>
+  <title>Pikkrr</title>
   <script>
     window.location.href = '/app/';
   </script>
@@ -100,7 +100,7 @@ const dynamicRouteHtml = `<!DOCTYPE html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CommuteDrop - Request Details</title>
+  <title>Pikkrr - Request Details</title>
   <script>
     // Load the main app - client-side routing will handle the dynamic route
     window.location.href = '/app/';

@@ -311,10 +311,9 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
 
         {/* Title and Description */}
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-gray-900">Enter Verification Code</h2>
-          <p className="text-gray-600">
-            We sent a 6-digit code to
-            <br />
+          <h2 className="text-2xl font-bold text-gray-900">Enter Code</h2>
+          <p className="text-gray-600 text-sm">
+            Code sent to<br />
             <span className="font-semibold text-gray-900">
               {phoneForm.getValues("phone") || "your phone"}
             </span>
@@ -325,7 +324,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
           {/* OTP Input - Large and Modern */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-3 text-center">
-              Verification Code
+              Code
             </label>
             <input
               {...otpForm.register("otp")}
@@ -364,7 +363,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
                 Verifying...
               </span>
             ) : (
-              "Verify & Continue"
+              "Verify"
             )}
           </button>
 
@@ -374,7 +373,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
             onClick={() => setStep("phone")}
             className="w-full text-sm text-gray-600 hover:text-gray-900 active:text-gray-700 transition-colors duration-150 py-2"
           >
-            ← Change phone number
+            ← Change number
           </button>
         </form>
         <div id="recaptcha-container"></div>
@@ -403,13 +402,13 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
         </div>
       </div>
 
-      {/* Title and Description */}
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-gray-900">Enter Your Phone Number</h2>
-        <p className="text-gray-600">
-          We'll send you a verification code via SMS
-        </p>
-      </div>
+        {/* Title and Description */}
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold text-gray-900">Phone Number</h2>
+          <p className="text-gray-600 text-sm">
+            We'll send a code via SMS
+          </p>
+        </div>
 
       <form onSubmit={phoneForm.handleSubmit(sendOTP)} className="space-y-6">
         {/* Phone Input - Large and Modern */}
@@ -446,7 +445,7 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
             </p>
           )}
           <p className="mt-2 text-xs text-gray-500">
-            Enter 8 digits for Singapore (+65), or include full number with country code
+            8 digits for Singapore, or full number
           </p>
         </div>
 

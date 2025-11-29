@@ -1,7 +1,7 @@
 {
-  "name": "commutedrop-functions",
+  "name": "pikkrr-functions",
   "version": "1.0.0",
-  "description": "Firebase Cloud Functions for CommuteDrop",
+  "description": "Firebase Cloud Functions for Pikkrr",
   "scripts": {
     "lint": "eslint .",
     "serve": "firebase emulators:start --only functions",

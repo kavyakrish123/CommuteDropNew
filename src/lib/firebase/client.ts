@@ -1,5 +1,5 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
+import { getAuth, Auth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getMessaging, getToken, Messaging, onMessage } from "firebase/messaging";
@@ -38,6 +38,15 @@ if (getApps().length === 0) {
 
 // Export auth, firestore, and storage instances
 export const auth: Auth = getAuth(app);
+
+// Set auth persistence to LOCAL (persist across sessions)
+// This prevents users from being logged out frequently
+if (typeof window !== "undefined") {
+  setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error("Error setting auth persistence:", error);
+  });
+}
+
 export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
 

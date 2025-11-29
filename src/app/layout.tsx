@@ -4,8 +4,8 @@ import { AuthProvider } from "@/lib/auth/AuthProvider";
 import { NotificationInitializer } from "@/components/NotificationInitializer";
 
 export const metadata: Metadata = {
-  title: "CommuteDrop - Deliver on the way",
-  description: "Send or carry items along your commute",
+  title: "Pikkrr - Transform Your Daily Commute Into Passive Income",
+  description: "The peer-to-peer delivery platform that connects commuters with package senders for eco-friendly, cost-effective deliveries along existing routes.",
   manifest: "/manifest.json",
 };
 

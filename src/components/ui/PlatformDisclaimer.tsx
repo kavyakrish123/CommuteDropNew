@@ -6,9 +6,7 @@ export function PlatformDisclaimer() {
       <div className="flex">
         <div className="ml-3">
           <p className="text-sm text-yellow-700">
-            <strong>Platform Notice:</strong> CommuteDrop is a peer-to-peer marketplace, not a
-            logistics company. We facilitate connections between users but are not responsible
-            for deliveries, disputes, or payments. All transactions are between users directly.
+            <strong>Note:</strong> Pikkrr connects users. We're not responsible for deliveries or payments.
           </p>
         </div>
       </div>

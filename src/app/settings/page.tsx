@@ -148,8 +148,8 @@ export default function SettingsPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">About</h3>
             <div className="space-y-2 text-sm text-gray-600">
-              <p>CommuteDrop v1.0.0</p>
-              <p>Deliver on the way - Singapore's peer-to-peer delivery platform</p>
+              <p>Pikkrr v1.0.0</p>
+              <p>Transform your daily commute into passive income</p>
             </div>
           </div>
         </div>
