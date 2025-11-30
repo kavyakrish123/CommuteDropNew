@@ -92,7 +92,7 @@ export default function DashboardPage() {
     const unsubscribeRequestedTasks = subscribeToRiderRequestedTasks(
       user.uid,
       (tasks) => {
-        console.log("Rider requested tasks:", tasks);
+        console.log("Rider requested tasks received:", tasks.length, tasks);
         setMyRequestedTasks(tasks);
       },
       (error) => {
@@ -485,20 +485,28 @@ export default function DashboardPage() {
                   {/* Show requested tasks (waiting for approval) */}
                   {myRequestedTasks.length > 0 && (
                     <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-[#1A1A1A] mb-4">Waiting for Approval</h3>
+                      <h3 className="text-lg font-semibold text-[#1A1A1A] mb-4">Waiting for Approval ({myRequestedTasks.length})</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
-                        {myRequestedTasks.map((task) =>
-                          task.id ? (
-                            <div key={task.id} className="relative">
+                        {myRequestedTasks.map((task, index) => {
+                          const taskId = task.id || `task-${index}`;
+                          if (!task.id) {
+                            console.warn("Task without id:", task);
+                          }
+                          return (
+                            <div key={taskId} className="relative">
                               <RequestCard 
                                 request={task} 
                                 currentUserId={user.uid}
                               />
                               <button
                                 onClick={async () => {
+                                  if (!task.id) {
+                                    showToast("Cannot cancel: Task ID missing", "error");
+                                    return;
+                                  }
                                   if (confirm("Are you sure you want to cancel your request to deliver this?")) {
                                     try {
-                                      await cancelRiderRequest(task.id!, user.uid);
+                                      await cancelRiderRequest(task.id, user.uid);
                                       showToast("Request cancelled successfully", "success");
                                     } catch (error: any) {
                                       showToast(error.message || "Failed to cancel request", "error");
@@ -510,8 +518,8 @@ export default function DashboardPage() {
                                 Cancel Request
                               </button>
                             </div>
-                          ) : null
-                        )}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
