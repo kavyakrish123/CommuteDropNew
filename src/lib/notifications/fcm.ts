@@ -24,6 +24,27 @@ export async function requestNotificationPermission(): Promise<string | null> {
       return null;
     }
 
+    // Check if VAPID key is configured
+    const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+    if (!vapidKey || vapidKey.trim() === "") {
+      console.error(
+        "❌ Firebase VAPID key is missing!\n" +
+        "Please set NEXT_PUBLIC_FIREBASE_VAPID_KEY in your .env.local file.\n" +
+        "Get your VAPID key from Firebase Console → Project Settings → Cloud Messaging → Web Push certificates"
+      );
+      return null;
+    }
+
+    // Validate VAPID key format (should be a base64 URL-safe string)
+    if (!vapidKey.match(/^[A-Za-z0-9_-]+$/)) {
+      console.error(
+        "❌ Invalid VAPID key format!\n" +
+        "VAPID key should be a base64 URL-safe string.\n" +
+        "Please check your NEXT_PUBLIC_FIREBASE_VAPID_KEY in .env.local"
+      );
+      return null;
+    }
+
     // Get FCM token - specify service worker registration
     let serviceWorkerRegistration = null;
     if ('serviceWorker' in navigator) {
@@ -35,19 +56,35 @@ export async function requestNotificationPermission(): Promise<string | null> {
     }
 
     const token = await getToken(messaging, {
-      vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+      vapidKey: vapidKey,
       serviceWorkerRegistration: serviceWorkerRegistration || undefined,
     });
 
     if (token) {
-      console.log("FCM Token:", token);
+      console.log("✅ FCM Token obtained successfully:", token.substring(0, 20) + "...");
       return token;
     } else {
       console.warn("No FCM token available");
       return null;
     }
-  } catch (error) {
-    console.error("Error requesting notification permission:", error);
+  } catch (error: any) {
+    // Handle specific VAPID key errors
+    if (error?.code === 'messaging/invalid-vapid-key' || 
+        error?.message?.includes('applicationServerKey') ||
+        error?.message?.includes('not valid')) {
+      console.error(
+        "❌ Invalid VAPID key error!\n" +
+        "The VAPID key in NEXT_PUBLIC_FIREBASE_VAPID_KEY is not valid.\n" +
+        "Please:\n" +
+        "1. Go to Firebase Console → Project Settings → Cloud Messaging\n" +
+        "2. Generate a new Web Push certificate (VAPID key)\n" +
+        "3. Copy the key pair and update your .env.local file\n" +
+        "4. Restart your development server",
+        error
+      );
+    } else {
+      console.error("Error requesting notification permission:", error);
+    }
     return null;
   }
 }

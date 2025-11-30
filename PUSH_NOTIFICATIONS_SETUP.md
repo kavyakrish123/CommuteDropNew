@@ -19,18 +19,44 @@ This app uses Firebase Cloud Messaging (FCM) for push notifications. The fronten
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Select your project
-3. Go to **Project Settings** → **Cloud Messaging**
-4. Under **Web configuration**, generate a **Web Push certificate** (VAPID key)
-5. Copy the key pair
+3. Go to **Project Settings** (gear icon) → **Cloud Messaging** tab
+4. Scroll down to **Web configuration** section
+5. If you don't have a Web Push certificate yet:
+   - Click **Generate key pair** button
+   - A VAPID key pair will be generated (looks like: `BK...` or `BL...`)
+6. Copy the **Key pair** value (the long base64 string, usually 87 characters)
+   - ⚠️ **Important**: Copy the entire key pair string, not just part of it
+   - The key should start with letters like `BK`, `BL`, `BM`, etc.
 
 ### 2. Add VAPID Key to Environment Variables
 
-Add to `.env.local`:
+Create or update `.env.local` in the project root:
 ```env
-NEXT_PUBLIC_FIREBASE_VAPID_KEY=your-vapid-key-here
+NEXT_PUBLIC_FIREBASE_VAPID_KEY=BKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-Also add to Vercel environment variables if deploying.
+**Important Notes:**
+- The VAPID key must be the complete key pair string from Firebase
+- Do not add quotes around the key value
+- The key should be a single line with no spaces
+- After adding, **restart your development server** (`npm run dev`)
+
+**For Production (Vercel):**
+1. Go to your Vercel project settings
+2. Navigate to **Environment Variables**
+3. Add `NEXT_PUBLIC_FIREBASE_VAPID_KEY` with the same value
+4. Redeploy your application
+
+### Troubleshooting VAPID Key Issues
+
+If you see the error: `InvalidAccessError: The provided applicationServerKey is not valid`
+
+1. **Check the key format**: The VAPID key should be a base64 URL-safe string (only letters, numbers, `-`, and `_`)
+2. **Verify it's complete**: Make sure you copied the entire key from Firebase Console
+3. **Check .env.local**: Ensure the key is in `.env.local` (not `.env`)
+4. **Restart server**: After adding the key, restart your dev server
+5. **Check for typos**: Ensure there are no extra spaces or line breaks
+6. **Regenerate if needed**: If the key still doesn't work, generate a new one in Firebase Console
 
 ### 3. Set Up Firebase Cloud Functions
 
