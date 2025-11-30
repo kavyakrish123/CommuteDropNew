@@ -8,6 +8,7 @@ import { User } from "@/lib/types";
 import Link from "next/link";
 import { MobileMenu } from "@/components/ui/MobileMenu";
 import { CommuteBadge } from "@/components/ui/CommuteBadge";
+import { LifetimeEarnings } from "@/components/ui/LifetimeEarnings";
 
 export default function ProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -49,11 +50,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#EFFFEE]">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">Profile</h1>
+      <header className="bg-white shadow-card border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-[#1A1A1A]">Profile</h1>
           <button
             onClick={() => setMenuOpen(true)}
             className="p-2 text-gray-600 hover:text-gray-900 active:bg-gray-100 rounded-lg transition-colors"
@@ -67,8 +68,13 @@ export default function ProfilePage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6 pb-24">
+        {/* Lifetime Earnings - Motivational Section */}
+        <div className="mb-6">
+          <LifetimeEarnings />
+        </div>
+
         {/* Profile Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-soft-lg shadow-card border border-gray-200 p-6 mb-6">
           <div className="flex flex-col items-center text-center mb-6">
             <div className="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden mb-4">
               {userData.profileImage ? (
@@ -132,7 +138,7 @@ export default function ProfilePage() {
           <div className="mt-6 pt-6 border-t border-gray-200">
             <Link
               href="/profile/edit"
-              className="block w-full text-center bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 active:bg-indigo-800 transition-colors"
+              className="block w-full text-center bg-[#00C57E] text-white py-3 px-4 rounded-soft-lg font-semibold hover:bg-[#00A869] active:bg-[#00995A] transition-all duration-150 shadow-card"
             >
               Edit Profile
             </Link>
