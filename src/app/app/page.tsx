@@ -32,6 +32,7 @@ import { ActiveJobBanner } from "@/components/ui/ActiveJobBanner";
 import { EducationBanner } from "@/components/ui/EducationBanner";
 import { LifetimeEarnings } from "@/components/ui/LifetimeEarnings";
 import { InstallAppEducation } from "@/components/ui/InstallAppEducation";
+import { ShareApp } from "@/components/ui/ShareApp";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -255,6 +256,11 @@ export default function DashboardPage() {
         {/* Lifetime Earnings - Motivational Section */}
         <div className="mb-6">
           <LifetimeEarnings />
+        </div>
+
+        {/* Share App Banner */}
+        <div className="mb-6">
+          <ShareApp variant="card" />
         </div>
 
         {/* Tabs */}

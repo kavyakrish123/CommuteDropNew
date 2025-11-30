@@ -7,6 +7,7 @@ import Link from "next/link";
 import { getUser } from "@/lib/firestore/users";
 import { User } from "@/lib/types";
 import { useEffect } from "react";
+import { ShareApp } from "./ShareApp";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -190,6 +191,12 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               </svg>
               <span className="font-medium text-gray-900">History</span>
             </Link>
+
+            <div className="border-t border-gray-200 my-2" />
+
+            <div onClick={onClose}>
+              <ShareApp variant="menu-item" />
+            </div>
           </nav>
         </div>
 

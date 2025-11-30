@@ -9,6 +9,7 @@ import Link from "next/link";
 import { MobileMenu } from "@/components/ui/MobileMenu";
 import { CommuteBadge } from "@/components/ui/CommuteBadge";
 import { LifetimeEarnings } from "@/components/ui/LifetimeEarnings";
+import { ShareApp } from "@/components/ui/ShareApp";
 
 export default function ProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -135,13 +136,14 @@ export default function ProfilePage() {
           </div>
 
           {/* Edit Button */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
             <Link
               href="/profile/edit"
               className="block w-full text-center bg-[#00C57E] text-white py-3 px-4 rounded-soft-lg font-semibold hover:bg-[#00A869] active:bg-[#00995A] transition-all duration-150 shadow-card"
             >
               Edit Profile
             </Link>
+            <ShareApp variant="button" className="w-full" />
           </div>
         </div>
       </main>

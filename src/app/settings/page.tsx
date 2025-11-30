@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/useToast";
 import { MobileMenu } from "@/components/ui/MobileMenu";
 import { useNotifications } from "@/hooks/useNotifications";
 import { requestNotificationPermission } from "@/lib/notifications/fcm";
+import { ShareApp } from "@/components/ui/ShareApp";
 
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -142,6 +143,11 @@ export default function SettingsPage() {
                 <p className="text-sm text-gray-900 capitalize">{userData.role}</p>
               </div>
             </div>
+          </div>
+
+          {/* Share App */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <ShareApp variant="card" />
           </div>
 
           {/* App Info */}
