@@ -74,7 +74,8 @@ export function ShareTracking({ request }: ShareTrackingProps) {
             type="text"
             value={trackingUrl}
             readOnly
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-soft-lg text-sm bg-gray-50"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-soft-lg text-sm bg-gray-50 text-black font-bold"
+            style={{ color: "#000000", fontWeight: 700 }}
           />
           <button
             onClick={handleCopyLink}

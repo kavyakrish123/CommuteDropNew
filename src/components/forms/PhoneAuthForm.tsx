@@ -333,8 +333,8 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
               maxLength={6}
               placeholder="000000"
               autoFocus
-              className="w-full px-6 py-4 text-center text-3xl font-bold tracking-widest border-2 border-gray-300 rounded-soft-lg focus:ring-4 focus:ring-[#00C57E]/20 focus:border-[#00C57E] transition-all duration-200 bg-white"
-              style={{ letterSpacing: "0.5em" }}
+              className="w-full px-6 py-4 text-center text-3xl font-bold tracking-widest border-2 border-gray-300 rounded-soft-lg focus:ring-4 focus:ring-[#00C57E]/20 focus:border-[#00C57E] transition-all duration-200 bg-white text-black"
+              style={{ letterSpacing: "0.5em", color: "#000000", fontWeight: 700 }}
               onInput={(e) => {
                 // Only allow digits
                 const value = (e.target as HTMLInputElement).value.replace(/\D/g, "");
@@ -425,7 +425,8 @@ export function PhoneAuthForm({ onError }: PhoneAuthFormProps) {
               type="tel"
               inputMode="tel"
               placeholder="91234567"
-              className="flex-1 px-6 py-4 text-lg font-medium focus:outline-none bg-transparent"
+              className="flex-1 px-6 py-4 text-lg font-bold focus:outline-none bg-transparent text-black"
+              style={{ color: "#000000", fontWeight: 700 }}
               onInput={(e) => {
                 // Remove any non-digit characters except + at the start
                 const value = (e.target as HTMLInputElement).value;

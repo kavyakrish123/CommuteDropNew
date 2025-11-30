@@ -181,7 +181,8 @@ export default function OnboardingPage() {
                   {...form.register("name")}
                   type="text"
                   placeholder="Your full name"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-soft-lg focus:border-[#00C57E] focus:outline-none focus:ring-2 focus:ring-[#00C57E]/20 text-base"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-soft-lg focus:border-[#00C57E] focus:outline-none focus:ring-2 focus:ring-[#00C57E]/20 text-base text-black font-bold"
+                  style={{ color: "#000000", fontWeight: 700 }}
                 />
                 {form.formState.errors.name && (
                   <p className="mt-1 text-sm text-red-600">
@@ -245,7 +246,8 @@ export default function OnboardingPage() {
                   {...form.register("bio")}
                   rows={4}
                   placeholder="Tell us a bit about yourself..."
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-soft-lg focus:border-[#00C57E] focus:outline-none focus:ring-2 focus:ring-[#00C57E]/20 text-base"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-soft-lg focus:border-[#00C57E] focus:outline-none focus:ring-2 focus:ring-[#00C57E]/20 text-base text-black font-bold"
+                  style={{ color: "#000000", fontWeight: 700 }}
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   {form.watch("bio")?.length || 0}/200 characters

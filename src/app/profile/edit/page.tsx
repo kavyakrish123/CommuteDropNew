@@ -213,7 +213,8 @@ export default function EditProfilePage() {
             </label>
             <input
               {...form.register("name")}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+              style={{ color: "#000000", fontWeight: 700 }}
             />
             {form.formState.errors.name && (
               <p className="mt-1 text-sm text-red-600">{form.formState.errors.name.message}</p>
@@ -228,7 +229,8 @@ export default function EditProfilePage() {
             <textarea
               {...form.register("bio")}
               rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-black font-bold"
+              style={{ color: "#000000", fontWeight: 700 }}
             />
             {form.formState.errors.bio && (
               <p className="mt-1 text-sm text-red-600">{form.formState.errors.bio.message}</p>

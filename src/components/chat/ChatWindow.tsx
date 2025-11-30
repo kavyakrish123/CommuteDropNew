@@ -231,7 +231,8 @@ export function ChatWindow({ requestId, otherUserId, otherUserName, disabled = f
                 }
               }}
               placeholder="Type a message..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+              style={{ color: "#000000", fontWeight: 700 }}
             />
             <button
               onClick={handleSendMessage}

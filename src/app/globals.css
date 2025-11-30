@@ -70,6 +70,56 @@ input, textarea, select {
   transition: all 0.2s ease-out;
 }
 
+/* Force all input text to be black and bold for visibility */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="search"],
+input[type="url"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+  color: #000000 !important;
+  font-weight: 700 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+/* Ensure placeholder text is also visible but lighter */
+input::placeholder,
+textarea::placeholder {
+  color: #666666 !important;
+  font-weight: 500 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #666666 !important;
+}
+
+/* For iOS Safari autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #000000 !important;
+  -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+  box-shadow: 0 0 0px 1000px white inset !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+/* Ensure number inputs are also bold and black */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Remove flashy focus rings, use subtle ones */
 *:focus-visible {
   outline: 2px solid rgba(99, 102, 241, 0.5);

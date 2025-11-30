@@ -118,7 +118,8 @@ export function EmailAuthForm({ onError }: EmailAuthFormProps) {
             {...form.register("email")}
             type="email"
             placeholder="you@example.com"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+            style={{ color: "#000000", fontWeight: 700 }}
           />
           {form.formState.errors.email && (
             <p className="mt-1 text-sm text-red-600">
@@ -135,7 +136,8 @@ export function EmailAuthForm({ onError }: EmailAuthFormProps) {
             {...form.register("password")}
             type="password"
             placeholder="••••••"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+            style={{ color: "#000000", fontWeight: 700 }}
           />
           {form.formState.errors.password && (
             <p className="mt-1 text-sm text-red-600">

@@ -312,7 +312,8 @@ export default function CreateRequestPage() {
                   {...form.register("itemDescription")}
                   rows={3}
                   placeholder="Describe the item clearly..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+                  style={{ color: "#000000", fontWeight: 700 }}
                 />
                 {form.formState.errors.itemDescription && (
                   <p className="mt-1 text-sm text-red-600">
@@ -391,13 +392,14 @@ export default function CreateRequestPage() {
                     form.setValue("pickupPincode", e.target.value);
                     debouncedValidatePickup(e.target.value);
                   }}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold ${
                     pickupValidation.status === "valid"
                       ? "border-green-500 bg-green-50"
                       : pickupValidation.status === "invalid"
                       ? "border-red-500 bg-red-50"
                       : "border-gray-300"
                   }`}
+                  style={{ color: "#000000", fontWeight: 700 }}
                 />
                 {pickupValidation.status === "validating" && (
                   <p className="mt-1 text-sm text-blue-600 flex items-center gap-1">
@@ -438,7 +440,8 @@ export default function CreateRequestPage() {
                   {...form.register("pickupDetails")}
                   rows={3}
                   placeholder="Building name, floor, landmark, etc. (Optional for privacy)"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+                  style={{ color: "#000000", fontWeight: 700 }}
                 />
                 {form.formState.errors.pickupDetails && (
                   <p className="mt-1 text-sm text-red-600">
@@ -485,13 +488,14 @@ export default function CreateRequestPage() {
                     form.setValue("dropPincode", e.target.value);
                     debouncedValidateDrop(e.target.value);
                   }}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold ${
                     dropValidation.status === "valid"
                       ? "border-green-500 bg-green-50"
                       : dropValidation.status === "invalid"
                       ? "border-red-500 bg-red-50"
                       : "border-gray-300"
                   }`}
+                  style={{ color: "#000000", fontWeight: 700 }}
                 />
                 {dropValidation.status === "validating" && (
                   <p className="mt-1 text-sm text-blue-600 flex items-center gap-1">
@@ -532,7 +536,8 @@ export default function CreateRequestPage() {
                   {...form.register("dropDetails")}
                   rows={3}
                   placeholder="Building name, floor, landmark, etc. (Optional for privacy)"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+                  style={{ color: "#000000", fontWeight: 700 }}
                 />
                 {form.formState.errors.dropDetails && (
                   <p className="mt-1 text-sm text-red-600">
@@ -577,7 +582,8 @@ export default function CreateRequestPage() {
                   step="0.01"
                   min="0"
                   placeholder="5.00"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+                  style={{ color: "#000000", fontWeight: 700 }}
                 />
                 {form.formState.errors.priceOffered && (
                   <p className="mt-1 text-sm text-red-600">

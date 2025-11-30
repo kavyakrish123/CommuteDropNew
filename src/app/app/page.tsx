@@ -384,7 +384,8 @@ export default function DashboardPage() {
                   const value = e.target.value.replace(/\D/g, '').slice(0, 6);
                   setSearchPincode(value);
                 }}
-                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-soft-lg focus:border-[#00C57E] focus:outline-none focus:ring-2 focus:ring-[#00C57E]/20 text-base"
+                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-soft-lg focus:border-[#00C57E] focus:outline-none focus:ring-2 focus:ring-[#00C57E]/20 text-base text-black font-bold"
+                style={{ color: "#000000", fontWeight: 700 }}
               />
               {searchPincode && (
                 <button
