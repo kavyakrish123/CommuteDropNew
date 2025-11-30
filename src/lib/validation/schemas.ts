@@ -48,18 +48,16 @@ export const createRequestSchema = z.object({
   ),
   pickupPincode: z
     .string()
-    .min(5, "Pincode must be at least 5 digits")
-    .max(6, "Pincode must be at most 6 digits")
-    .regex(/^\d+$/, "Pincode must contain only numbers"),
+    .min(1, "Location is required")
+    .max(200, "Location too long"),
   pickupDetails: z
     .string()
     .max(200, "Pickup details too long")
     .default(""),
   dropPincode: z
     .string()
-    .min(5, "Pincode must be at least 5 digits")
-    .max(6, "Pincode must be at most 6 digits")
-    .regex(/^\d+$/, "Pincode must contain only numbers"),
+    .min(1, "Location is required")
+    .max(200, "Location too long"),
   dropDetails: z
     .string()
     .max(200, "Drop details too long")

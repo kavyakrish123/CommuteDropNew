@@ -61,3 +61,4 @@ npm run cap:build  # Rebuilds and syncs automatically
 
 For detailed instructions, see [IONIC_CAPACITOR_SETUP.md](./IONIC_CAPACITOR_SETUP.md)
 
+

@@ -172,3 +172,4 @@ After building the APK:
 - [Android Studio Guide](https://developer.android.com/studio)
 - [Next.js Static Export](https://nextjs.org/docs/app/building-your-application/deploying/static-exports)
 
+

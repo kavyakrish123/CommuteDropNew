@@ -14,6 +14,7 @@ import { storage } from "@/lib/firebase/client";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { geocodePostalCode } from "@/lib/utils/geolocation";
+import { validateLocation, debounce, LocationValidationResult } from "@/lib/utils/locationValidation";
 import Link from "next/link";
 
 const CATEGORIES: { value: ItemCategory; label: string }[] = [
@@ -33,6 +34,17 @@ export default function CreateRequestPage() {
   const [itemPhoto, setItemPhoto] = useState<File | null>(null);
   const [itemPhotoUrl, setItemPhotoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  
+  // Location validation states
+  const [pickupValidation, setPickupValidation] = useState<{
+    status: "idle" | "validating" | "valid" | "invalid";
+    result?: LocationValidationResult;
+  }>({ status: "idle" });
+  
+  const [dropValidation, setDropValidation] = useState<{
+    status: "idle" | "validating" | "valid" | "invalid";
+    result?: LocationValidationResult;
+  }>({ status: "idle" });
 
   const form = useForm<z.infer<typeof createRequestSchema>>({
     resolver: zodResolver(createRequestSchema),
@@ -48,6 +60,43 @@ export default function CreateRequestPage() {
       router.push("/auth");
     }
   }, [user, authLoading, router]);
+
+  // Debounced validation functions
+  const debouncedValidatePickup = debounce(async (value: string) => {
+    if (!value || value.trim().length === 0) {
+      setPickupValidation({ status: "idle" });
+      return;
+    }
+
+    setPickupValidation({ status: "validating" });
+    const result = await validateLocation(value);
+    
+    if (result.isValid) {
+      setPickupValidation({ status: "valid", result });
+      // Update form with validated coordinates
+      form.setValue("pickupPincode", value);
+    } else {
+      setPickupValidation({ status: "invalid", result });
+    }
+  }, 500);
+
+  const debouncedValidateDrop = debounce(async (value: string) => {
+    if (!value || value.trim().length === 0) {
+      setDropValidation({ status: "idle" });
+      return;
+    }
+
+    setDropValidation({ status: "validating" });
+    const result = await validateLocation(value);
+    
+    if (result.isValid) {
+      setDropValidation({ status: "valid", result });
+      // Update form with validated coordinates
+      form.setValue("dropPincode", value);
+    } else {
+      setDropValidation({ status: "invalid", result });
+    }
+  }, 500);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,24 +139,36 @@ export default function CreateRequestPage() {
         showToast("Please upload an item photo", "error");
         return;
       }
+      // Reset pickup validation when entering step 2
+      setPickupValidation({ status: "idle" });
       setStep(2);
       return;
     }
 
     if (step === 2) {
       const pickupPincode = form.getValues("pickupPincode");
-      if (!pickupPincode || pickupPincode.length < 5) {
-        showToast("Please enter a valid pickup postal code", "error");
+      if (!pickupPincode || pickupPincode.trim().length === 0) {
+        showToast("Please enter a pickup location", "error");
         return;
       }
+      if (pickupValidation.status !== "valid") {
+        showToast("Please enter a valid Singapore location (postal code or address)", "error");
+        return;
+      }
+      // Reset drop validation when entering step 3
+      setDropValidation({ status: "idle" });
       setStep(3);
       return;
     }
 
     if (step === 3) {
       const dropPincode = form.getValues("dropPincode");
-      if (!dropPincode || dropPincode.length < 5) {
-        showToast("Please enter a valid drop postal code", "error");
+      if (!dropPincode || dropPincode.trim().length === 0) {
+        showToast("Please enter a drop location", "error");
+        return;
+      }
+      if (dropValidation.status !== "valid") {
+        showToast("Please enter a valid Singapore location (postal code or address)", "error");
         return;
       }
       setStep(4);
@@ -128,20 +189,46 @@ export default function CreateRequestPage() {
         itemPhotoUrl_final = await uploadImage(itemPhoto);
       }
 
-      // Geocode postal codes to get lat/lng
-      const [pickupLocation, dropLocation] = await Promise.all([
-        geocodePostalCode(data.pickupPincode),
-        geocodePostalCode(data.dropPincode),
-      ]);
+      // Use validated coordinates if available, otherwise try to geocode
+      let pickupLat: number | null = pickupValidation.result?.lat ?? null;
+      let pickupLng: number | null = pickupValidation.result?.lng ?? null;
+      let dropLat: number | null = dropValidation.result?.lat ?? null;
+      let dropLng: number | null = dropValidation.result?.lng ?? null;
+
+      // Fallback to geocoding if validation didn't provide coordinates
+      if (!pickupLat || !pickupLng) {
+        const pickupLocation = await geocodePostalCode(data.pickupPincode);
+        pickupLat = pickupLocation?.lat ?? null;
+        pickupLng = pickupLocation?.lng ?? null;
+      }
+
+      if (!dropLat || !dropLng) {
+        const dropLocation = await geocodePostalCode(data.dropPincode);
+        dropLat = dropLocation?.lat ?? null;
+        dropLng = dropLocation?.lng ?? null;
+      }
+
+      // Final validation - ensure we have valid coordinates
+      if (!pickupLat || !pickupLng) {
+        showToast("Invalid pickup location. Please enter a valid Singapore address or postal code.", "error");
+        setUploading(false);
+        return;
+      }
+
+      if (!dropLat || !dropLng) {
+        showToast("Invalid drop location. Please enter a valid Singapore address or postal code.", "error");
+        setUploading(false);
+        return;
+      }
 
       const requestId = await createRequest(user.uid, {
         ...data,
         priceOffered: data.priceOffered ?? null,
         itemPhoto: itemPhotoUrl_final,
-        pickupLat: pickupLocation?.lat || null,
-        pickupLng: pickupLocation?.lng || null,
-        dropLat: dropLocation?.lat || null,
-        dropLng: dropLocation?.lng || null,
+        pickupLat,
+        pickupLng,
+        dropLat,
+        dropLng,
       });
 
       showToast("Request created successfully!", "success");
@@ -294,19 +381,53 @@ export default function CreateRequestPage() {
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pickup Postal Code *
+                  Pickup Location * (Postal Code or Address)
                 </label>
                 <input
                   {...form.register("pickupPincode")}
                   type="text"
-                  placeholder="123456"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="123456 or Orchard Road, Singapore"
+                  onChange={(e) => {
+                    form.setValue("pickupPincode", e.target.value);
+                    debouncedValidatePickup(e.target.value);
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                    pickupValidation.status === "valid"
+                      ? "border-green-500 bg-green-50"
+                      : pickupValidation.status === "invalid"
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-300"
+                  }`}
                 />
+                {pickupValidation.status === "validating" && (
+                  <p className="mt-1 text-sm text-blue-600 flex items-center gap-1">
+                    <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Validating location...
+                  </p>
+                )}
+                {pickupValidation.status === "valid" && pickupValidation.result?.address && (
+                  <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {pickupValidation.result.address}
+                  </p>
+                )}
+                {pickupValidation.status === "invalid" && pickupValidation.result?.error && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {pickupValidation.result.error}
+                  </p>
+                )}
                 {form.formState.errors.pickupPincode && (
                   <p className="mt-1 text-sm text-red-600">
                     {form.formState.errors.pickupPincode.message}
                   </p>
                 )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Enter a Singapore postal code (6 digits) or address
+                </p>
               </div>
 
               <div>
@@ -340,7 +461,8 @@ export default function CreateRequestPage() {
                 <button
                   type="button"
                   onClick={handleStepContinue}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700"
+                  disabled={pickupValidation.status !== "valid"}
+                  className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Continue
                 </button>
@@ -353,19 +475,53 @@ export default function CreateRequestPage() {
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Drop Postal Code *
+                  Drop Location * (Postal Code or Address)
                 </label>
                 <input
                   {...form.register("dropPincode")}
                   type="text"
-                  placeholder="123456"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="123456 or Marina Bay, Singapore"
+                  onChange={(e) => {
+                    form.setValue("dropPincode", e.target.value);
+                    debouncedValidateDrop(e.target.value);
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                    dropValidation.status === "valid"
+                      ? "border-green-500 bg-green-50"
+                      : dropValidation.status === "invalid"
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-300"
+                  }`}
                 />
+                {dropValidation.status === "validating" && (
+                  <p className="mt-1 text-sm text-blue-600 flex items-center gap-1">
+                    <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Validating location...
+                  </p>
+                )}
+                {dropValidation.status === "valid" && dropValidation.result?.address && (
+                  <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {dropValidation.result.address}
+                  </p>
+                )}
+                {dropValidation.status === "invalid" && dropValidation.result?.error && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {dropValidation.result.error}
+                  </p>
+                )}
                 {form.formState.errors.dropPincode && (
                   <p className="mt-1 text-sm text-red-600">
                     {form.formState.errors.dropPincode.message}
                   </p>
                 )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Enter a Singapore postal code (6 digits) or address
+                </p>
               </div>
 
               <div>
@@ -399,7 +555,8 @@ export default function CreateRequestPage() {
                 <button
                   type="button"
                   onClick={handleStepContinue}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700"
+                  disabled={dropValidation.status !== "valid"}
+                  className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Continue
                 </button>
