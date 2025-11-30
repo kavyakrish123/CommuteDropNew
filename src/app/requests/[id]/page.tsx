@@ -45,6 +45,7 @@ import { DeliveryTracking } from "@/components/ui/DeliveryTracking";
 import { getCurrentLocation } from "@/lib/utils/geolocation";
 import { LocationDisplay } from "@/components/ui/LocationDisplay";
 import { PayNowQRDisplay } from "@/components/ui/PayNowQRDisplay";
+import { ShareTracking } from "@/components/ui/ShareTracking";
 
 export default function RequestDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -530,6 +531,11 @@ export default function RequestDetailPage() {
                 </p>
               </div>
             </div>
+          )}
+
+          {/* Share Tracking with Recipient (for sender) */}
+          {isSender && request.commuterId && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit", "delivered", "completed"].includes(request.status) && (
+            <ShareTracking request={request} />
           )}
 
           {/* Pickup - Grab Style */}
