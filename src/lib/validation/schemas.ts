@@ -66,7 +66,7 @@ export const createRequestSchema = z.object({
     .default(""),
   priceOffered: z
     .number()
-    .positive("Price must be positive")
+    .positive("Tip must be positive")
     .optional()
     .nullable(),
 });

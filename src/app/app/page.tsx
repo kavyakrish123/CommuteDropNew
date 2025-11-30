@@ -163,13 +163,13 @@ export default function DashboardPage() {
 
     try {
       // Check eligibility
-      const eligibility = await canRiderRequestTask(user.uid);
-      if (!eligibility.canRequest) {
-        showToast(eligibility.reason || "Cannot request this task", "error");
-        return;
-      }
+        const eligibility = await canRiderRequestTask(user.uid);
+        if (!eligibility.canRequest) {
+          showToast(eligibility.reason || "Cannot help with this right now", "error");
+          return;
+        }
 
-      if (!confirm("Request to deliver this task? The sender will review your profile before approval.")) {
+      if (!confirm("Help deliver this? The sender will review your profile before approval.")) {
         return;
       }
 
@@ -178,7 +178,7 @@ export default function DashboardPage() {
       // Real-time listener will update automatically
     } catch (error) {
       console.error("Error requesting task:", error);
-      showToast("Failed to request task", "error");
+        showToast("Failed to request delivery", "error");
     }
   };
 
@@ -250,7 +250,7 @@ export default function DashboardPage() {
                 : "text-[#666666] active:text-[#1A1A1A]"
             }`}
           >
-            Tasks ({myActiveTasks.length})
+            Helping ({myActiveTasks.length})
           </button>
           <button
             onClick={() => setActiveTab("available")}
@@ -306,7 +306,7 @@ export default function DashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span>Location detected - sorted by distance</span>
+                  <span>Location detected - showing nearby requests</span>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-red-600">{locationError}</p>
                   )}
                   <p className="text-xs text-[#666666]">
-                    Enable location for nearby tasks
+                    Enable location to see requests along your route
                   </p>
                 </div>
               )}
@@ -363,15 +363,15 @@ export default function DashboardPage() {
         {/* Education Banner */}
         {activeTab === "my-requests" && (
           <EducationBanner
-            title="Create Tasks Responsibly"
-            content="Only create tasks you genuinely need. No-shows may result in account restrictions. Tasks expire after 1 day if not accepted."
+            title="Create Requests Thoughtfully"
+            content="Only create requests you genuinely need. No-shows may result in account restrictions. Requests expire after 1 day if not accepted."
             type="warning"
           />
         )}
         {activeTab === "available" && (
           <EducationBanner
             title="How It Works"
-            content="Accept tasks along your commute route. You can have up to 3 active tasks at a time. Use location to find nearby tasks."
+            content="Help out along your commute route. You can have up to 3 active deliveries at a time. Use location to find nearby requests."
             type="info"
           />
         )}
@@ -444,8 +444,8 @@ export default function DashboardPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                   </div>
-                  <p className="text-base font-semibold text-[#1A1A1A] mb-2">No active tasks</p>
-                  <p className="text-sm text-[#666666]">Find tasks in Available tab</p>
+                  <p className="text-base font-semibold text-[#1A1A1A] mb-2">Not helping anyone yet</p>
+                  <p className="text-sm text-[#666666]">Find requests in Available tab</p>
                 </div>
               ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
@@ -474,7 +474,7 @@ export default function DashboardPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
                   </div>
-                  <p className="text-base font-semibold text-[#1A1A1A] mb-2">No available tasks</p>
+                  <p className="text-base font-semibold text-[#1A1A1A] mb-2">No requests nearby</p>
                   <p className="text-sm text-[#666666] mb-4">Check back later or adjust filters</p>
                   {searchPincode && (
                     <button

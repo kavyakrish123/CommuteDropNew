@@ -20,7 +20,7 @@ export function PayNowQRDisplay({ qrCodeUrl, userName, isSender = false }: PayNo
       <div className="flex items-center justify-between mb-3">
         <div>
           <p className="text-sm font-semibold text-gray-900">
-            {isSender ? "Sender's" : "Rider's"} PayNow QR
+            {isSender ? "Sender's" : "Helper's"} PayNow QR
           </p>
           <p className="text-xs text-gray-600">
             Scan to make payment to {userName}

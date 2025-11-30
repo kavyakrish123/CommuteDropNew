@@ -146,7 +146,7 @@ export default function RiderDashboardPage() {
         return;
       }
 
-      if (!confirm("Request to deliver this task? The sender will review your profile before approval.")) {
+      if (!confirm("Help deliver this? The sender will review your profile before approval.")) {
         return;
       }
 
@@ -155,7 +155,7 @@ export default function RiderDashboardPage() {
       // Real-time listener will update automatically
     } catch (error) {
       console.error("Error requesting task:", error);
-      showToast("Failed to request task", "error");
+        showToast("Failed to request delivery", "error");
     }
   };
 
@@ -209,7 +209,7 @@ export default function RiderDashboardPage() {
                   : "text-[#666666] hover:text-[#1A1A1A]"
               }`}
             >
-              My Active Tasks ({activeTasks.length})
+              Helping Out ({activeTasks.length})
             </button>
             <button
               onClick={() => setActiveTab("available")}
@@ -219,7 +219,7 @@ export default function RiderDashboardPage() {
                   : "text-[#666666] hover:text-[#1A1A1A]"
               }`}
             >
-              Available Tasks
+              Available Requests
             </button>
           </div>
         </div>
@@ -237,7 +237,7 @@ export default function RiderDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span>Location detected - showing tasks sorted by distance (within 10km)</span>
+                  <span>Location detected - showing requests along your route</span>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -260,7 +260,7 @@ export default function RiderDashboardPage() {
                     <p className="text-xs text-red-600">{locationError}</p>
                   )}
                   <p className="text-xs text-gray-500">
-                    Enable location to see tasks sorted by distance from you
+                    Enable location to see requests along your commute
                   </p>
                 </div>
               )}
@@ -296,13 +296,13 @@ export default function RiderDashboardPage() {
         {activeTab === "active" && activeTasks.length > 0 && (
           <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              <strong>Active Task:</strong> Complete your current pickup before requesting a new task.
+              <strong>Active Delivery:</strong> Complete your current pickup before helping with another.
             </p>
             {activeTasks.some(
               (t) => t.status === "pickup_otp_pending" || t.status === "waiting_pickup" || t.status === "approved"
             ) && (
               <p className="text-sm text-orange-800 mt-1">
-                ⚠️ You have a task waiting for pickup. Go to the pickup location and verify OTP before requesting new tasks.
+                ⚠️ You have a delivery waiting for pickup. Go to the pickup location and verify OTP before helping with another.
               </p>
             )}
           </div>
@@ -319,7 +319,7 @@ export default function RiderDashboardPage() {
               </div>
             ) : availableRequests.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
-                <p>No available tasks at the moment.</p>
+                <p>No requests nearby at the moment.</p>
                 {searchPincode && (
                   <button
                     onClick={() => setSearchPincode("")}
@@ -352,7 +352,7 @@ export default function RiderDashboardPage() {
             </div>
           ) : activeTasks.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
-              <p>No active tasks. Request a task from the Available Tasks tab.</p>
+              <p>Not helping anyone yet. Find requests in the Available Requests tab.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">

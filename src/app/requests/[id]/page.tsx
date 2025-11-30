@@ -170,7 +170,7 @@ export default function RequestDetailPage() {
   const handleRequest = async () => {
     if (!user || !request) return;
 
-    if (!confirm("Request to deliver this task? The sender will review your profile before approval.")) {
+      if (!confirm("Help deliver this? The sender will review your profile before approval.")) {
       return;
     }
 
@@ -180,7 +180,7 @@ export default function RequestDetailPage() {
       // Real-time listener will update automatically
     } catch (error) {
       console.error("Error requesting task:", error);
-      showToast("Failed to request task", "error");
+        showToast("Failed to request delivery", "error");
     }
   };
 
@@ -189,20 +189,20 @@ export default function RequestDetailPage() {
 
     try {
       await approveRiderRequest(requestId, riderId);
-      showToast("Rider approved! They can now proceed with pickup.", "success");
+      showToast("Helper approved! They can now proceed with pickup.", "success");
       // Real-time listener will update automatically
     } catch (error: any) {
       console.error("Error approving rider:", error);
-      showToast(error.message || "Failed to approve rider", "error");
+      showToast(error.message || "Failed to approve helper", "error");
     }
   };
 
   const handleReject = async (riderId?: string) => {
     if (!request) return;
 
-    const message = riderId 
-      ? "Are you sure you want to reject this rider's request?"
-      : "Are you sure you want to reject all rider requests?";
+      const message = riderId 
+        ? "Are you sure you want to reject this helper's request?"
+        : "Are you sure you want to reject all helper requests?";
     
     if (!confirm(message)) {
       return;
@@ -210,11 +210,11 @@ export default function RequestDetailPage() {
 
     try {
       await rejectRiderRequest(requestId, riderId);
-      showToast(riderId ? "Rider request rejected." : "All rider requests rejected.", "success");
+      showToast(riderId ? "Helper request rejected." : "All helper requests rejected.", "success");
       // Real-time listener will update automatically
     } catch (error: any) {
       console.error("Error rejecting rider:", error);
-      showToast(error.message || "Failed to reject rider", "error");
+      showToast(error.message || "Failed to reject helper", "error");
     }
   };
 
@@ -498,10 +498,10 @@ export default function RequestDetailPage() {
               <div className="mt-3 pt-3 border-t border-indigo-200">
                 <p className="text-sm font-semibold text-gray-900 mb-1">Current Status:</p>
                 <p className="text-base text-gray-700">
-                  {request.status === "created" && "📦 Request created. Waiting for riders to request."}
-                  {request.status === "requested" && "⏳ Rider has requested. Review and approve."}
-                  {request.status === "approved" && "✅ Rider approved. Waiting for pickup."}
-                  {request.status === "waiting_pickup" && "📍 Rider is ready to pick up. Provide pickup OTP."}
+                  {request.status === "created" && "📦 Request created. Waiting for someone to help."}
+                  {request.status === "requested" && "⏳ Someone wants to help. Review and approve."}
+                  {request.status === "approved" && "✅ Helper approved. Waiting for pickup."}
+                  {request.status === "waiting_pickup" && "📍 Helper is ready to pick up. Provide pickup OTP."}
                   {request.status === "pickup_otp_pending" && "⏳ Pickup OTP verification in progress."}
                   {request.status === "picked" && "✅ Item picked up! Delivery in progress."}
                   {request.status === "in_transit" && "🚚 Item in transit. Waiting for delivery."}
@@ -566,17 +566,17 @@ export default function RequestDetailPage() {
             )}
           </div>
 
-          {/* Price */}
+          {/* Tip */}
           {request.priceOffered && (
             <div>
-              <h3 className="text-sm font-medium text-gray-600 mb-1">Price</h3>
+              <h3 className="text-sm font-medium text-gray-600 mb-1">Tip</h3>
               <p className="text-2xl font-bold text-indigo-600">
                 ${request.priceOffered}
               </p>
             </div>
           )}
 
-          {/* PayNow QR Codes - Show when job is active and has price */}
+          {/* PayNow QR Codes - Show when delivery is active and has tip */}
           {request.priceOffered && request.priceOffered > 0 && 
            request.commuterId && 
            ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status) && (
@@ -626,7 +626,7 @@ export default function RequestDetailPage() {
             <div className="pt-4 border-t border-gray-200 space-y-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Rider Requests ({requestedRiders.length})
+                  People Who Want to Help ({requestedRiders.length})
                 </h3>
                 {requestedRiders.length > 1 && (
                   <button
@@ -993,7 +993,7 @@ export default function RequestDetailPage() {
                   Rate your experience
                 </p>
                 <p className="text-xs text-gray-600 mb-3">
-                  Help build trust in the community by rating this {isSender ? "rider" : "sender"}
+                  Help build trust in the community by rating this {isSender ? "helper" : "sender"}
                 </p>
                 <button
                   onClick={() => setShowRatingModal(true)}

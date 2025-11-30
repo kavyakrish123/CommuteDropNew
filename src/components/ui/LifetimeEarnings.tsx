@@ -87,7 +87,7 @@ export function LifetimeEarnings() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span className="text-sm text-white/80">
-              {totalDeliveries} {totalDeliveries === 1 ? "delivery" : "deliveries"}
+              {totalDeliveries} {totalDeliveries === 1 ? "time helped" : "times helped"}
             </span>
           </div>
           {totalDeliveries > 0 && (
@@ -96,7 +96,7 @@ export function LifetimeEarnings() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
               <span className="text-sm text-white/80">
-                ${totalDeliveries > 0 ? (lifetimeEarnings / totalDeliveries).toFixed(2) : "0.00"} avg
+                ${totalDeliveries > 0 ? (lifetimeEarnings / totalDeliveries).toFixed(2) : "0.00"} avg tip
               </span>
             </div>
           )}
@@ -105,7 +105,7 @@ export function LifetimeEarnings() {
         {lifetimeEarnings === 0 && (
           <div className="mt-4 pt-4 border-t border-white/20">
             <p className="text-sm text-white/80 text-center">
-              Start earning by accepting your first delivery! 🚀
+              Start earning by helping someone on your commute! 🚀
             </p>
           </div>
         )}

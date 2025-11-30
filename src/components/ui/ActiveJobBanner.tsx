@@ -13,14 +13,14 @@ export function ActiveJobBanner({ request, isRider = false }: ActiveJobBannerPro
   const getStatusText = () => {
     switch (request.status) {
       case "approved":
-        return isRider ? "Go to pickup location" : "Rider is on the way";
+        return isRider ? "Go to pickup location" : "Helper is on the way";
       case "waiting_pickup":
       case "pickup_otp_pending":
-        return isRider ? "Verify pickup OTP" : "Rider arrived at pickup";
+        return isRider ? "Verify pickup OTP" : "Helper arrived at pickup";
       case "picked":
-        return isRider ? "Start delivery" : "Item picked up";
+        return isRider ? "On your way" : "Item picked up";
       case "in_transit":
-        return isRider ? "In transit to drop" : "Delivery in progress";
+        return isRider ? "On your way" : "Delivery in progress";
       default:
         return "Active";
     }
@@ -108,7 +108,7 @@ export function ActiveJobBanner({ request, isRider = false }: ActiveJobBannerPro
             </div>
             {request.priceOffered && (
               <div className="ml-4 text-right">
-                <p className="text-xs text-gray-500 mb-0.5">Price</p>
+                <p className="text-xs text-gray-500 mb-0.5">Tip</p>
                 <p className="text-base font-bold text-green-600">${request.priceOffered}</p>
               </div>
             )}

@@ -115,7 +115,7 @@ export default function HistoryPage() {
               </svg>
             </div>
             <p className="text-base font-semibold text-[#1A1A1A] mb-2">No history yet</p>
-            <p className="text-sm text-[#666666]">Completed and expired tasks will appear here</p>
+            <p className="text-sm text-[#666666]">Completed and expired requests will appear here</p>
           </div>
         ) : (
           <div className="space-y-6">

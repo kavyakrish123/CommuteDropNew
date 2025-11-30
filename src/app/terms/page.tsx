@@ -63,18 +63,18 @@ export default function TermsPage() {
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">Task Expiry</h3>
+                <h3 className="font-semibold mb-2">Request Expiry</h3>
                 <p>
-                  Tasks automatically expire if not accepted within <strong>60 minutes</strong> of
+                  Requests automatically expire if not accepted within <strong>1 day</strong> of
                   creation.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">Rider Limitations</h3>
+                <h3 className="font-semibold mb-2">Helper Limitations</h3>
                 <ul className="list-disc list-inside space-y-1 ml-4">
                   <li>Maximum <strong>3 active pickups</strong> at a time</li>
-                  <li>Must verify pickup OTP before accepting new tasks</li>
+                  <li>Must verify pickup OTP before helping with new requests</li>
                   <li>Must complete current delivery before accepting more</li>
                 </ul>
               </div>
@@ -90,7 +90,7 @@ export default function TermsPage() {
                 only</strong> with optional additional details provided by the sender.
               </p>
               <p>
-                Full addresses are only shared between matched users after task acceptance.
+                Full addresses are only shared between matched users after request acceptance.
               </p>
             </div>
           </section>
@@ -104,7 +104,7 @@ export default function TermsPage() {
               </p>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Item loss, damage, or delays</li>
-                <li>Disputes between senders and riders</li>
+                <li>Disputes between senders and helpers</li>
                 <li>Payment issues between users</li>
                 <li>Illegal items transported by users</li>
                 <li>Compliance with local regulations</li>

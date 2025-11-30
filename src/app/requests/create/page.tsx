@@ -201,8 +201,8 @@ export default function CreateRequestPage() {
                       <div className="flex">
                         <div className="ml-3">
                           <p className="text-sm text-red-700">
-                            <strong>⚠️ Ethical Reminder:</strong> It is unethical to create tasks and not show up when a rider arrives. 
-                            Please only create tasks you genuinely need delivered. No-shows may result in account restrictions.
+                            <strong>⚠️ Ethical Reminder:</strong> It is unethical to create requests and not show up when someone comes to help. 
+                            Please only create requests you genuinely need. No-shows may result in account restrictions.
                           </p>
                         </div>
                       </div>
@@ -412,7 +412,7 @@ export default function CreateRequestPage() {
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Price Offered (Optional)
+                  Tip (Optional)
                 </label>
                 <input
                   {...form.register("priceOffered", { valueAsNumber: true })}
@@ -428,7 +428,7 @@ export default function CreateRequestPage() {
                   </p>
                 )}
                 <p className="mt-1 text-xs text-gray-500">
-                  Optional: Offer a price to incentivize riders
+                  Optional: Add a tip to show appreciation
                 </p>
               </div>
 
@@ -451,7 +451,7 @@ export default function CreateRequestPage() {
                   </p>
                   {form.watch("priceOffered") && (
                     <p>
-                      <strong>Price:</strong> ${form.watch("priceOffered")}
+                      <strong>Tip:</strong> ${form.watch("priceOffered")}
                     </p>
                   )}
                 </div>

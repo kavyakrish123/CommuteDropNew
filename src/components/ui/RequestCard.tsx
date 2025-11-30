@@ -40,7 +40,7 @@ export function RequestCard({
           )}
           {isMyTask && (
             <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium whitespace-nowrap">
-              Your Task
+              Helping Out
             </span>
           )}
         </div>
@@ -103,10 +103,10 @@ export function RequestCard({
           )}
         </div>
 
-        {/* Price */}
+        {/* Tip */}
         {request.priceOffered && (
           <div className="flex-shrink-0 pt-2 border-t border-gray-100">
-            <p className="text-xs text-gray-500 font-medium mb-0.5">PRICE</p>
+            <p className="text-xs text-gray-500 font-medium mb-0.5">TIP</p>
             <p className="text-xl font-bold text-[#00C57E]">${request.priceOffered}</p>
           </div>
         )}

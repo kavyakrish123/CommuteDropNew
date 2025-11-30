@@ -284,7 +284,7 @@ export default function OnboardingPage() {
                   ))}
                 </div>
                 <p className="mt-2 text-xs text-gray-500">
-                  This helps match you with nearby delivery tasks
+                  This helps match you with requests along your route
                 </p>
               </div>
 

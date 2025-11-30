@@ -101,7 +101,7 @@ export default function SettingsPage() {
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">Push Notifications</h3>
                 <p className="text-sm text-gray-600">
-                  Receive notifications for pickups, deliveries, and nearby tasks
+                  Receive notifications for pickups, deliveries, and nearby requests
                 </p>
               </div>
               <button
