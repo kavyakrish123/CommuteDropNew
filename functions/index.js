@@ -92,8 +92,49 @@ exports.sendNotification = onCall(async (request) => {
   }
 });
 
-// Trigger notification when request status changes to "picked"
-exports.onRequestPicked = onDocumentUpdated(
+// Helper function to send notification
+async function sendNotificationToUser(userId, title, body, data) {
+  try {
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (!userDoc.exists) return;
+    
+    const userData = userDoc.data();
+    if (!userData.fcmToken || !userData.notificationEnabled) return;
+    
+    await admin.messaging().send({
+      notification: { title, body },
+      data: {
+        ...data,
+        requestId: data.requestId || '',
+        url: data.url || '/app',
+      },
+      token: userData.fcmToken,
+      webpush: {
+        fcmOptions: {
+          link: data.url || '/app',
+        },
+        notification: {
+          icon: '/icon-192x192.png',
+          badge: '/icon-192x192.png',
+        },
+      },
+      android: { priority: 'high' },
+      apns: {
+        payload: {
+          aps: {
+            sound: 'default',
+            badge: 1,
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error(`Error sending notification to user ${userId}:`, error);
+  }
+}
+
+// Trigger notification on ALL request status changes
+exports.onRequestStatusChange = onDocumentUpdated(
   'requests/{requestId}',
   async (event) => {
     const change = event.data;
@@ -103,158 +144,201 @@ exports.onRequestPicked = onDocumentUpdated(
     const after = change.after.data();
     const requestId = event.params.requestId;
 
-    // Check if status changed to "picked"
-    if (before.status !== 'picked' && after.status === 'picked') {
-      const senderId = after.senderId;
-      const commuterId = after.commuterId;
+    // Skip if status hasn't changed
+    if (before.status === after.status) return null;
 
-      // Notify sender
+    const senderId = after.senderId;
+    const commuterId = after.commuterId;
+    const tipAmount = after.priceOffered || 0;
+
+    // Handle different status changes
+    switch (after.status) {
+      case 'approved':
+        // Notify sender
+        if (senderId) {
+          await sendNotificationToUser(
+            senderId,
+            'Helper Approved! 🎉',
+            'Your helper has been approved and is ready to pick up.',
+            { requestId, type: 'status_change', role: 'sender', url: `/requests/${requestId}` }
+          );
+        }
+        // Notify helper
+        if (commuterId) {
+          await sendNotificationToUser(
+            commuterId,
+            "You're Approved! ✅",
+            'The sender approved your request. You can now proceed to pickup.',
+            { requestId, type: 'status_change', role: 'helper', url: `/requests/${requestId}` }
+          );
+        }
+        break;
+
+      case 'waiting_pickup':
+        if (senderId) {
+          await sendNotificationToUser(
+            senderId,
+            'Helper Arriving Soon 📍',
+            'Your helper is on the way to the pickup location.',
+            { requestId, type: 'status_change', role: 'sender', url: `/requests/${requestId}` }
+          );
+        }
+        if (commuterId) {
+          await sendNotificationToUser(
+            commuterId,
+            'Almost There! 🚶',
+            "You're near the pickup location. Get ready to verify OTP.",
+            { requestId, type: 'status_change', role: 'helper', url: `/requests/${requestId}` }
+          );
+        }
+        break;
+
+      case 'pickup_otp_pending':
+        if (senderId) {
+          await sendNotificationToUser(
+            senderId,
+            'OTP Verification Started 🔐',
+            'Your helper is verifying the pickup OTP. Provide the code when asked.',
+            { requestId, type: 'status_change', role: 'sender', url: `/requests/${requestId}` }
+          );
+        }
+        if (commuterId) {
+          await sendNotificationToUser(
+            commuterId,
+            'Enter Pickup OTP 🔑',
+            'Enter the OTP provided by the sender to complete pickup.',
+            { requestId, type: 'status_change', role: 'helper', url: `/requests/${requestId}` }
+          );
+        }
+        break;
+
+      case 'picked':
+        if (senderId) {
+          await sendNotificationToUser(
+            senderId,
+            'Item Picked Up! 📦',
+            'Your helper has picked up the item and is starting delivery.',
+            { requestId, type: 'status_change', role: 'sender', url: `/requests/${requestId}` }
+          );
+        }
+        if (commuterId) {
+          await sendNotificationToUser(
+            commuterId,
+            'Pickup Complete! ✅',
+            'Item picked up successfully. Start your delivery now.',
+            { requestId, type: 'status_change', role: 'helper', url: `/requests/${requestId}` }
+          );
+        }
+        break;
+
+      case 'in_transit':
+        if (senderId) {
+          await sendNotificationToUser(
+            senderId,
+            'Delivery In Progress 🚚',
+            'Your helper is on the way to the drop-off location.',
+            { requestId, type: 'status_change', role: 'sender', url: `/requests/${requestId}` }
+          );
+        }
+        if (commuterId) {
+          await sendNotificationToUser(
+            commuterId,
+            'On Your Way 🚶',
+            "You're delivering the item. Head to the drop-off location.",
+            { requestId, type: 'status_change', role: 'helper', url: `/requests/${requestId}` }
+          );
+        }
+        break;
+
+      case 'delivered':
+        if (senderId) {
+          await sendNotificationToUser(
+            senderId,
+            'Item Delivered! 🎉',
+            'Your helper has arrived at the drop-off location.',
+            { requestId, type: 'status_change', role: 'sender', url: `/requests/${requestId}` }
+          );
+        }
+        if (commuterId) {
+          await sendNotificationToUser(
+            commuterId,
+            'Arrived at Drop-off 📍',
+            "You've arrived. Verify the drop-off OTP to complete delivery.",
+            { requestId, type: 'status_change', role: 'helper', url: `/requests/${requestId}` }
+          );
+        }
+        break;
+
+      case 'completed':
+        const tipText = tipAmount > 0 ? ` Tip: $${tipAmount}` : '';
+        if (senderId) {
+          await sendNotificationToUser(
+            senderId,
+            'Delivery Completed! ✅',
+            `Your delivery is complete!${tipText}`,
+            { requestId, type: 'status_change', role: 'sender', url: `/requests/${requestId}` }
+          );
+        }
+        if (commuterId) {
+          await sendNotificationToUser(
+            commuterId,
+            'Delivery Complete! 🎉',
+            `Great job! Delivery completed.${tipText}`,
+            { requestId, type: 'status_change', role: 'helper', url: `/requests/${requestId}` }
+          );
+        }
+        break;
+    }
+
+    // Handle payment confirmation separately
+    if (before.paymentConfirmed !== after.paymentConfirmed && after.paymentConfirmed) {
       if (senderId) {
-        try {
-          const senderDoc = await db.collection('users').doc(senderId).get();
-          if (senderDoc.exists) {
-            const senderData = senderDoc.data();
-            if (senderData.fcmToken && senderData.notificationEnabled) {
-              await admin.messaging().send({
-                notification: {
-                  title: '📦 Pickup Confirmed',
-                  body: 'Your item has been picked up by the rider. Track delivery in the app.',
-                },
-                data: {
-                  requestId: requestId,
-                  type: 'pickup',
-                  role: 'sender',
-                  url: `/requests/${requestId}`,
-                },
-                token: senderData.fcmToken,
-                webpush: {
-                  fcmOptions: {
-                    link: `/requests/${requestId}`,
-                  },
-                },
-              });
-            }
-          }
-        } catch (error) {
-          console.error('Error notifying sender:', error);
-        }
+        await sendNotificationToUser(
+          senderId,
+          'Payment Confirmed! 💰',
+          'The tip payment has been confirmed.',
+          { requestId, type: 'payment', role: 'sender', url: `/requests/${requestId}` }
+        );
       }
-
-      // Notify rider
       if (commuterId) {
-        try {
-          const riderDoc = await db.collection('users').doc(commuterId).get();
-          if (riderDoc.exists) {
-            const riderData = riderDoc.data();
-            if (riderData.fcmToken && riderData.notificationEnabled) {
-              await admin.messaging().send({
-                notification: {
-                  title: '✅ Pickup Verified',
-                  body: 'Pickup OTP verified! Start delivery when ready.',
-                },
-                data: {
-                  requestId: requestId,
-                  type: 'pickup',
-                  role: 'rider',
-                  url: `/requests/${requestId}`,
-                },
-                token: riderData.fcmToken,
-                webpush: {
-                  fcmOptions: {
-                    link: `/requests/${requestId}`,
-                  },
-                },
-              });
-            }
-          }
-        } catch (error) {
-          console.error('Error notifying rider:', error);
-        }
+        await sendNotificationToUser(
+          commuterId,
+          'Payment Received! 💰',
+          `You received $${tipAmount} tip!`,
+          { requestId, type: 'payment', role: 'helper', url: `/requests/${requestId}` }
+        );
       }
     }
-  });
 
-// Trigger notification when request status changes to "delivered"
-exports.onRequestDelivered = onDocumentUpdated(
-  'requests/{requestId}',
-  async (event) => {
-    const change = event.data;
-    if (!change) return null;
-    
-    const before = change.before.data();
-    const after = change.after.data();
-    const requestId = event.params.requestId;
-
-    // Check if status changed to "delivered"
-    if (before.status !== 'delivered' && after.status === 'delivered') {
-      const senderId = after.senderId;
-      const commuterId = after.commuterId;
-
-      // Notify sender
+    // Handle arrival notifications
+    if (before.arrivedAtPickup !== after.arrivedAtPickup && after.arrivedAtPickup) {
       if (senderId) {
-        try {
-          const senderDoc = await db.collection('users').doc(senderId).get();
-          if (senderDoc.exists) {
-            const senderData = senderDoc.data();
-            if (senderData.fcmToken && senderData.notificationEnabled) {
-              await admin.messaging().send({
-                notification: {
-                  title: '🎉 Delivery Completed',
-                  body: 'Your item has been delivered successfully!',
-                },
-                data: {
-                  requestId: requestId,
-                  type: 'drop',
-                  role: 'sender',
-                  url: `/requests/${requestId}`,
-                },
-                token: senderData.fcmToken,
-                webpush: {
-                  fcmOptions: {
-                    link: `/requests/${requestId}`,
-                  },
-                },
-              });
-            }
-          }
-        } catch (error) {
-          console.error('Error notifying sender:', error);
-        }
-      }
-
-      // Notify rider
-      if (commuterId) {
-        try {
-          const riderDoc = await db.collection('users').doc(commuterId).get();
-          if (riderDoc.exists) {
-            const riderData = riderDoc.data();
-            if (riderData.fcmToken && riderData.notificationEnabled) {
-              await admin.messaging().send({
-                notification: {
-                  title: '✅ Delivery Completed',
-                  body: 'Drop OTP verified! Delivery completed successfully.',
-                },
-                data: {
-                  requestId: requestId,
-                  type: 'drop',
-                  role: 'rider',
-                  url: `/requests/${requestId}`,
-                },
-                token: riderData.fcmToken,
-                webpush: {
-                  fcmOptions: {
-                    link: `/requests/${requestId}`,
-                  },
-                },
-              });
-            }
-          }
-        } catch (error) {
-          console.error('Error notifying rider:', error);
-        }
+        await sendNotificationToUser(
+          senderId,
+          'Helper Arrived! 📍',
+          'Your helper has arrived at the pickup location.',
+          { requestId, type: 'arrival', role: 'sender', url: `/requests/${requestId}` }
+        );
       }
     }
-  });
+
+    if (before.arrivedAtDrop !== after.arrivedAtDrop && after.arrivedAtDrop) {
+      if (senderId) {
+        await sendNotificationToUser(
+          senderId,
+          'Helper Arrived at Drop-off! 📍',
+          'Your helper has arrived at the drop-off location.',
+          { requestId, type: 'arrival', role: 'sender', url: `/requests/${requestId}` }
+        );
+      }
+    }
+
+    return null;
+  }
+);
+
+// Legacy function - now handled by onRequestStatusChange
+// Keeping for backward compatibility but it won't trigger since status changes are handled above
 
 // Scheduled function to check for nearby tasks and notify users
 exports.checkNearbyTasks = onSchedule(
@@ -386,31 +470,69 @@ exports.onNewRequestCreated = onDocumentCreated(
         return null;
       }
 
-      // For each commuter, check if they're nearby (within 5km)
-      // Note: In production, you'd want to store user's current location
-      // For now, we'll send a general notification to all commuters
+      // Skip if this request was created by a commuter (don't notify them about their own request)
+      if (request.senderId) {
+        // Check if sender is in the commuters list and skip them
+        const senderDoc = await db.collection('users').doc(request.senderId).get();
+        if (senderDoc.exists) {
+          const senderData = senderDoc.data();
+          // If sender is also a commuter, they shouldn't get notified about their own request
+          // This is handled by checking senderId below
+        }
+      }
+
+      // For each commuter, check if they're nearby (within 10km)
+      // Only notify if user has location data and is within range
+      // EXCLUDE the sender (they created this request)
       const notifications = [];
-      commutersSnapshot.forEach((doc) => {
-        const userData = doc.data();
-        if (userData.fcmToken) {
-          notifications.push({
-            userId: doc.id,
-            fcmToken: userData.fcmToken,
-          });
+      commutersSnapshot.forEach((userDoc) => {
+        const userData = userDoc.data();
+        if (!userData.fcmToken) return;
+        
+        // Don't notify the sender about their own request
+        if (userDoc.id === request.senderId) return;
+        
+        // Check if user has location data (stored in user document)
+        // If user has currentLat/currentLng, calculate distance
+        if (userData.currentLat && userData.currentLng) {
+          const distance = calculateDistance(
+            userData.currentLat,
+            userData.currentLng,
+            request.pickupLat,
+            request.pickupLng
+          );
+          
+          // Only notify if within 10km
+          if (distance <= 10) {
+            notifications.push({
+              userId: userDoc.id,
+              fcmToken: userData.fcmToken,
+              distance: distance,
+            });
+          }
+        } else {
+          // If no location data, don't notify (to avoid spam)
+          // In future, you could allow users to opt-in to general notifications
         }
       });
 
-      // Send notifications (limit to first 10 to avoid spam)
-      const limitedNotifications = notifications.slice(0, 10);
+      // Sort by distance and send to closest users first (limit to 20)
+      notifications.sort((a, b) => a.distance - b.distance);
+      const limitedNotifications = notifications.slice(0, 20);
+      
       for (const notification of limitedNotifications) {
         try {
+          const distanceText = notification.distance < 1 
+            ? `${Math.round(notification.distance * 1000)}m away`
+            : `${notification.distance.toFixed(1)}km away`;
+            
           await admin.messaging().send({
             notification: {
-              title: '📦 New Delivery Task Available',
-              body: `A new delivery task is available near ${request.pickupPincode}. Check it out!`,
+              title: '📦 New Request Near You',
+              body: `A new delivery request is available ${distanceText} at ${request.pickupPincode}. Check it out!`,
             },
             data: {
-              type: 'new_task',
+              type: 'nearby_request',
               requestId: requestId,
               url: `/requests/${requestId}`,
             },
@@ -418,6 +540,19 @@ exports.onNewRequestCreated = onDocumentCreated(
             webpush: {
               fcmOptions: {
                 link: `/requests/${requestId}`,
+              },
+              notification: {
+                icon: '/icon-192x192.png',
+                badge: '/icon-192x192.png',
+              },
+            },
+            android: { priority: 'high' },
+            apns: {
+              payload: {
+                aps: {
+                  sound: 'default',
+                  badge: 1,
+                },
               },
             },
           });

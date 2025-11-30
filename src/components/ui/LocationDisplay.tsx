@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { MapLinkButton } from "./MapLinkButton";
+import { getLocationName } from "@/lib/utils/pincodeToAddress";
 
 interface LocationDisplayProps {
   type: "pickup" | "drop";
@@ -19,6 +21,24 @@ export function LocationDisplay({
 }: LocationDisplayProps) {
   const isPickup = type === "pickup";
   const displayLabel = label || (isPickup ? "PICKUP" : "DROP OFF");
+  const [locationName, setLocationName] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch address from pincode
+    const fetchLocation = async () => {
+      try {
+        const name = await getLocationName(pincode);
+        setLocationName(name);
+      } catch (error) {
+        console.error("Error fetching location:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLocation();
+  }, [pincode]);
 
   return (
     <div className="bg-white rounded-xl p-4 border border-gray-200">
@@ -72,9 +92,20 @@ export function LocationDisplay({
             <p className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
               {displayLabel}
             </p>
-            <p className="text-lg font-bold text-gray-900 mb-0.5">{pincode}</p>
+            {loading ? (
+              <p className="text-lg font-bold text-gray-900 mb-0.5">{pincode}</p>
+            ) : (
+              <>
+                <p className="text-base font-bold text-gray-900 mb-0.5">
+                  {locationName || pincode}
+                </p>
+                {locationName && locationName !== pincode && (
+                  <p className="text-xs text-gray-500 mb-1">{pincode}</p>
+                )}
+              </>
+            )}
             {details && (
-              <p className="text-sm text-gray-600 truncate">{details}</p>
+              <p className="text-sm text-gray-600 truncate mt-1">{details}</p>
             )}
           </div>
         </div>

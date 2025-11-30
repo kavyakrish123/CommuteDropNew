@@ -140,22 +140,39 @@ export default function DashboardPage() {
 
   // Get user's current location when on available tasks tab
   useEffect(() => {
-    if (activeTab === "available" && !userLocation) {
-      getCurrentLocation()
-        .then((location) => {
+    if (activeTab === "available" && user && !userLocation) {
+      const fetchLocation = async () => {
+        try {
+          const location = await getCurrentLocation();
           if (location) {
             setUserLocation(location);
             setLocationError(null);
+            // Update user's location in Firestore for nearby notifications
+            try {
+              const { updateUserLocation } = await import("@/lib/firestore/userLocation");
+              await updateUserLocation(user.uid);
+            } catch (error) {
+              console.error("Error updating user location:", error);
+            }
           } else {
-            setLocationError("Location access denied. Please enable location to see nearby tasks.");
+            setLocationError("Location access denied. Please enable location to see nearby requests.");
           }
-        })
-        .catch((error) => {
+        } catch (error) {
           console.error("Error getting location:", error);
-          setLocationError("Unable to get your location. Showing all tasks.");
-        });
+          setLocationError("Unable to get your location. Showing all requests.");
+        }
+      };
+
+      fetchLocation();
+      
+      // Update location periodically (every 5 minutes) when on available tab
+      const locationInterval = setInterval(() => {
+        fetchLocation();
+      }, 5 * 60 * 1000); // 5 minutes
+      
+      return () => clearInterval(locationInterval);
     }
-  }, [activeTab, userLocation]);
+  }, [activeTab, user, userLocation]);
 
 
   const handleRequest = async (requestId: string) => {
