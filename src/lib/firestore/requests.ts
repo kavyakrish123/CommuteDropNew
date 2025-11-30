@@ -255,6 +255,40 @@ export async function rejectRiderRequest(
   }
 }
 
+/**
+ * Cancel a rider's request to deliver (called by the rider themselves)
+ * This removes the rider from the requestedRiders array
+ */
+export async function cancelRiderRequest(
+  requestId: string,
+  riderId: string
+): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+
+  const requestedRiders = request.requestedRiders || [];
+  if (!requestedRiders.includes(riderId)) {
+    throw new Error("You have not requested this task");
+  }
+
+  // Only allow cancellation if status is still "requested" (not yet approved)
+  if (request.status !== "requested") {
+    throw new Error("Cannot cancel request. Task has already been approved or is in progress.");
+  }
+
+  const docRef = doc(db, "requests", requestId);
+  const updatedRiders = requestedRiders.filter(id => id !== riderId);
+  
+  await updateDoc(docRef, {
+    requestedRiders: updatedRiders,
+    requestedBy: updatedRiders.length > 0 ? updatedRiders[0] : null,
+    status: updatedRiders.length > 0 ? "requested" : "created",
+    updatedAt: serverTimestamp(),
+  });
+}
+
 export async function getRequestedTasks(senderId: string): Promise<DeliveryRequest[]> {
   const q = query(
     collection(db, "requests"),
@@ -763,6 +797,49 @@ export function subscribeToRiderActiveTasks(
     },
     (error) => {
       console.error("Error subscribing to rider active tasks:", error);
+      if (onError) {
+        onError(error);
+      }
+    }
+  );
+}
+
+/**
+ * Subscribe to requests where the rider has requested to deliver (status "requested")
+ * This includes requests where the rider is in the requestedRiders array
+ */
+export function subscribeToRiderRequestedTasks(
+  commuterId: string,
+  callback: (tasks: DeliveryRequest[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  // Query all requests with status "requested"
+  const q = query(
+    collection(db, "requests"),
+    where("status", "==", "requested")
+  );
+  
+  return onSnapshot(
+    q,
+    (querySnapshot) => {
+      const tasks = querySnapshot.docs
+        .map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            } as DeliveryRequest)
+        )
+        .filter((req) => {
+          // Filter to only include requests where this rider is in requestedRiders
+          const requestedRiders = req.requestedRiders || [];
+          const requestedBy = req.requestedBy;
+          return requestedRiders.includes(commuterId) || requestedBy === commuterId;
+        });
+      callback(tasks);
+    },
+    (error) => {
+      console.error("Error subscribing to rider requested tasks:", error);
       if (onError) {
         onError(error);
       }

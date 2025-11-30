@@ -14,6 +14,7 @@ import {
   approveRiderRequest,
   rejectRiderRequest,
   cancelRequest,
+  cancelRiderRequest,
 } from "@/lib/firestore/requests";
 import { RequestCard } from "@/components/ui/RequestCard";
 import { sortByDistance, getCurrentLocation } from "@/lib/utils/geolocation";
@@ -24,6 +25,7 @@ import {
   subscribeToMyRequests,
   subscribeToAvailableRequests,
   subscribeToRiderActiveTasks,
+  subscribeToRiderRequestedTasks,
 } from "@/lib/firestore/requests";
 import { MobileMenu } from "@/components/ui/MobileMenu";
 import { ActiveJobBanner } from "@/components/ui/ActiveJobBanner";
@@ -37,7 +39,8 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"my-requests" | "my-tasks" | "available">("my-requests");
   const [myRequests, setMyRequests] = useState<DeliveryRequest[]>([]);
   const [myActiveTasks, setMyActiveTasks] = useState<DeliveryRequest[]>([]);
-  const [requestedTasks, setRequestedTasks] = useState<DeliveryRequest[]>([]);
+  const [myRequestedTasks, setMyRequestedTasks] = useState<DeliveryRequest[]>([]); // Tasks where rider has requested
+  const [requestedTasks, setRequestedTasks] = useState<DeliveryRequest[]>([]); // Tasks where sender has requests
   const [availableRequests, setAvailableRequests] = useState<DeliveryRequest[]>([]);
   const [allAvailableRequests, setAllAvailableRequests] = useState<DeliveryRequest[]>([]);
   const [loading, setLoading] = useState(false);
@@ -85,6 +88,17 @@ export default function DashboardPage() {
       }
     );
 
+    // Subscribe to tasks where rider has requested to deliver (status "requested")
+    const unsubscribeRequestedTasks = subscribeToRiderRequestedTasks(
+      user.uid,
+      (tasks) => {
+        setMyRequestedTasks(tasks);
+      },
+      (error) => {
+        console.error("Error subscribing to requested tasks:", error);
+      }
+    );
+
     // Subscribe to available requests (only when on available tab)
     let unsubscribeAvailable: (() => void) | null = null;
     if (activeTab === "available") {
@@ -114,6 +128,7 @@ export default function DashboardPage() {
     return () => {
       unsubscribeMyRequests();
       unsubscribeActiveTasks();
+      unsubscribeRequestedTasks();
       if (unsubscribeAvailable) unsubscribeAvailable();
     };
   }, [user, activeTab, showToast]);
@@ -267,7 +282,7 @@ export default function DashboardPage() {
                 : "text-[#666666] active:text-[#1A1A1A]"
             }`}
           >
-            Helping ({myActiveTasks.length})
+            Helping ({myActiveTasks.length + myRequestedTasks.length})
           </button>
           <button
             onClick={() => setActiveTab("available")}
@@ -454,7 +469,7 @@ export default function DashboardPage() {
                     <RequestCardSkeleton key={i} />
                   ))}
                 </div>
-              ) : myActiveTasks.length === 0 ? (
+              ) : myActiveTasks.length === 0 && myRequestedTasks.length === 0 ? (
                 <div className="bg-white rounded-soft-lg shadow-card p-12 text-center">
                   <div className="w-16 h-16 bg-[#EFFFEE] rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-[#00C57E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

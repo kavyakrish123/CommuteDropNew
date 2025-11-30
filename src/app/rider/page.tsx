@@ -9,6 +9,7 @@ import {
   getRiderActiveTasks,
   canRiderRequestTask,
   requestToDeliver,
+  cancelRiderRequest,
 } from "@/lib/firestore/requests";
 import { RequestCard } from "@/components/ui/RequestCard";
 import { sortByDistance, getCurrentLocation } from "@/lib/utils/geolocation";
@@ -19,6 +20,7 @@ import { RequestCardSkeleton } from "@/components/ui/SkeletonLoader";
 import {
   subscribeToAvailableRequests,
   subscribeToRiderActiveTasks,
+  subscribeToRiderRequestedTasks,
 } from "@/lib/firestore/requests";
 import { MobileMenu } from "@/components/ui/MobileMenu";
 
@@ -29,6 +31,7 @@ export default function RiderDashboardPage() {
   const [availableRequests, setAvailableRequests] = useState<DeliveryRequest[]>([]);
   const [allAvailableRequests, setAllAvailableRequests] = useState<DeliveryRequest[]>([]);
   const [activeTasks, setActiveTasks] = useState<DeliveryRequest[]>([]);
+  const [requestedTasks, setRequestedTasks] = useState<DeliveryRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchPincode, setSearchPincode] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -58,6 +61,17 @@ export default function RiderDashboardPage() {
       (error) => {
         console.error("Error subscribing to active tasks:", error);
         setLoading(false);
+      }
+    );
+
+    // Subscribe to tasks where rider has requested to deliver (status "requested")
+    const unsubscribeRequestedTasks = subscribeToRiderRequestedTasks(
+      user.uid,
+      (tasks) => {
+        setRequestedTasks(tasks);
+      },
+      (error) => {
+        console.error("Error subscribing to requested tasks:", error);
       }
     );
 
@@ -91,6 +105,7 @@ export default function RiderDashboardPage() {
 
     return () => {
       unsubscribeActiveTasks();
+      unsubscribeRequestedTasks();
       if (unsubscribeAvailable) unsubscribeAvailable();
     };
   }, [user, activeTab, showToast]);
@@ -226,7 +241,7 @@ export default function RiderDashboardPage() {
                   : "text-[#666666] hover:text-[#1A1A1A]"
               }`}
             >
-              Helping Out ({activeTasks.length})
+              Helping Out ({activeTasks.length + requestedTasks.length})
             </button>
             <button
               onClick={() => setActiveTab("available")}
@@ -367,18 +382,62 @@ export default function RiderDashboardPage() {
                 <RequestCardSkeleton key={i} />
               ))}
             </div>
-          ) : activeTasks.length === 0 ? (
+          ) : activeTasks.length === 0 && requestedTasks.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <p>Not helping anyone yet. Find requests in the Available Requests tab.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
-              {activeTasks.map((task) =>
-                task.id ? (
-                  <RequestCard key={task.id} request={task} currentUserId={user.uid} />
-                ) : null
+            <>
+              {/* Show requested tasks (waiting for approval) */}
+              {requestedTasks.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-[#1A1A1A] mb-4">Waiting for Approval</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+                    {requestedTasks.map((task) =>
+                      task.id ? (
+                        <div key={task.id} className="relative">
+                          <RequestCard 
+                            request={task} 
+                            currentUserId={user.uid}
+                          />
+                          <button
+                            onClick={async () => {
+                              if (confirm("Are you sure you want to cancel your request to deliver this?")) {
+                                try {
+                                  await cancelRiderRequest(task.id!, user.uid);
+                                  showToast("Request cancelled successfully", "success");
+                                } catch (error: any) {
+                                  showToast(error.message || "Failed to cancel request", "error");
+                                }
+                              }
+                            }}
+                            className="mt-2 w-full px-4 py-2 bg-red-50 text-red-600 rounded-soft-lg font-semibold hover:bg-red-100 transition-colors text-sm"
+                          >
+                            Cancel Request
+                          </button>
+                        </div>
+                      ) : null
+                    )}
+                  </div>
+                </div>
               )}
-            </div>
+              
+              {/* Show active tasks */}
+              {activeTasks.length > 0 && (
+                <div>
+                  {requestedTasks.length > 0 && (
+                    <h3 className="text-lg font-semibold text-[#1A1A1A] mb-4 mt-6">Active Deliveries</h3>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+                    {activeTasks.map((task) =>
+                      task.id ? (
+                        <RequestCard key={task.id} request={task} currentUserId={user.uid} />
+                      ) : null
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
