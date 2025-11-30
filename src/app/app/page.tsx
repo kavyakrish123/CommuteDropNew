@@ -29,6 +29,7 @@ import { MobileMenu } from "@/components/ui/MobileMenu";
 import { ActiveJobBanner } from "@/components/ui/ActiveJobBanner";
 import { EducationBanner } from "@/components/ui/EducationBanner";
 import { LifetimeEarnings } from "@/components/ui/LifetimeEarnings";
+import { InstallAppEducation } from "@/components/ui/InstallAppEducation";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -215,6 +216,9 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-6 pb-24">
+        {/* Install App Education */}
+        <InstallAppEducation />
+
         {/* Lifetime Earnings - Motivational Section */}
         <div className="mb-6">
           <LifetimeEarnings />
