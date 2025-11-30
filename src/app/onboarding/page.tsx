@@ -161,27 +161,27 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Complete Your Profile</h1>
-          <p className="text-sm text-gray-600 mt-1">Step {step} of 3</p>
+    <div className="min-h-screen bg-[#EFFFEE]">
+      <header className="bg-white shadow-card border-b border-gray-200">
+        <div className="max-w-2xl mx-auto px-6 py-4">
+          <h1 className="text-2xl font-bold text-[#1A1A1A]">Complete Your Profile</h1>
+          <p className="text-sm text-[#666666] mt-1">Step {step} of 3</p>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+      <main className="max-w-2xl mx-auto px-6 py-8">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="bg-white rounded-soft-lg shadow-card-lg p-6 space-y-6">
           {step === 1 && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   Name *
                 </label>
                 <input
                   {...form.register("name")}
                   type="text"
                   placeholder="Your full name"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-soft-lg focus:border-[#00C57E] focus:outline-none focus:ring-2 focus:ring-[#00C57E]/20 text-base"
                 />
                 {form.formState.errors.name && (
                   <p className="mt-1 text-sm text-red-600">
@@ -191,7 +191,7 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   Profile Image *
                 </label>
                 <div className="space-y-3">
@@ -228,7 +228,7 @@ export default function OnboardingPage() {
                   }
                   setStep(2);
                 }}
-                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#00C57E] text-white py-3 px-4 rounded-soft-lg font-semibold hover:bg-[#00A869] active:bg-[#00995A] disabled:opacity-50 disabled:cursor-not-allowed shadow-card transition-all duration-150"
               >
                 Continue
               </button>
@@ -245,7 +245,7 @@ export default function OnboardingPage() {
                   {...form.register("bio")}
                   rows={4}
                   placeholder="Tell us a bit about yourself..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-soft-lg focus:border-[#00C57E] focus:outline-none focus:ring-2 focus:ring-[#00C57E]/20 text-base"
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   {form.watch("bio")?.length || 0}/200 characters
@@ -272,10 +272,10 @@ export default function OnboardingPage() {
                       key={option.value}
                       type="button"
                       onClick={() => setCommuteType(option.value)}
-                      className={`p-4 rounded-xl border-2 transition-all ${
+                      className={`p-4 rounded-soft-lg border-2 transition-all ${
                         commuteType === option.value
-                          ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                          ? "border-[#00C57E] bg-[#EFFFEE] text-[#00C57E]"
+                          : "border-gray-200 bg-white text-[#666666] hover:border-gray-300"
                       }`}
                     >
                       <div className="text-2xl mb-1">{option.icon}</div>
@@ -292,7 +292,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50"
+                  className="flex-1 border-2 border-gray-300 text-[#666666] py-3 px-4 rounded-soft-lg font-semibold hover:bg-gray-50 active:scale-[0.98] transition-all duration-150"
                 >
                   Back
                 </button>
@@ -344,7 +344,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50"
+                  className="flex-1 border-2 border-gray-300 text-[#666666] py-3 px-4 rounded-soft-lg font-semibold hover:bg-gray-50 active:scale-[0.98] transition-all duration-150"
                 >
                   Back
                 </button>

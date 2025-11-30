@@ -27,6 +27,7 @@ import {
 } from "@/lib/firestore/requests";
 import { MobileMenu } from "@/components/ui/MobileMenu";
 import { ActiveJobBanner } from "@/components/ui/ActiveJobBanner";
+import { EducationBanner } from "@/components/ui/EducationBanner";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -251,6 +252,7 @@ export default function DashboardPage() {
           >
             Available
           </button>
+          </div>
         </div>
 
         {/* Active Job Banner - Show at top when job is taken */}
@@ -348,13 +350,20 @@ export default function DashboardPage() {
         )}
 
 
-        {/* Ethical Warning */}
+        {/* Education Banner */}
         {activeTab === "my-requests" && (
-          <div className="mb-6 bg-red-50 border-l-4 border-red-400 rounded-soft-lg p-4">
-            <p className="text-sm text-red-700">
-              <strong>⚠️ Important:</strong> Only create tasks you need. No-shows may result in restrictions.
-            </p>
-          </div>
+          <EducationBanner
+            title="Create Tasks Responsibly"
+            content="Only create tasks you genuinely need. No-shows may result in account restrictions. Tasks expire after 1 day if not accepted."
+            type="warning"
+          />
+        )}
+        {activeTab === "available" && (
+          <EducationBanner
+            title="How It Works"
+            content="Accept tasks along your commute route. You can have up to 3 active tasks at a time. Use location to find nearby tasks."
+            type="info"
+          />
         )}
 
         {/* Content based on active tab - Grid Card Layout */}
