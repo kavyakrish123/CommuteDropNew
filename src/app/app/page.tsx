@@ -92,6 +92,7 @@ export default function DashboardPage() {
     const unsubscribeRequestedTasks = subscribeToRiderRequestedTasks(
       user.uid,
       (tasks) => {
+        console.log("Rider requested tasks:", tasks);
         setMyRequestedTasks(tasks);
       },
       (error) => {
@@ -480,13 +481,57 @@ export default function DashboardPage() {
                   <p className="text-sm text-[#666666]">Find requests in Available tab</p>
                 </div>
               ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
-                  {myActiveTasks.map((task) =>
-                    task.id ? (
-                      <RequestCard key={task.id} request={task} currentUserId={user.uid} />
-                    ) : null
+                <>
+                  {/* Show requested tasks (waiting for approval) */}
+                  {myRequestedTasks.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-[#1A1A1A] mb-4">Waiting for Approval</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+                        {myRequestedTasks.map((task) =>
+                          task.id ? (
+                            <div key={task.id} className="relative">
+                              <RequestCard 
+                                request={task} 
+                                currentUserId={user.uid}
+                              />
+                              <button
+                                onClick={async () => {
+                                  if (confirm("Are you sure you want to cancel your request to deliver this?")) {
+                                    try {
+                                      await cancelRiderRequest(task.id!, user.uid);
+                                      showToast("Request cancelled successfully", "success");
+                                    } catch (error: any) {
+                                      showToast(error.message || "Failed to cancel request", "error");
+                                    }
+                                  }
+                                }}
+                                className="mt-2 w-full px-4 py-2 bg-red-50 text-red-600 rounded-soft-lg font-semibold hover:bg-red-100 transition-colors text-sm"
+                              >
+                                Cancel Request
+                              </button>
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+                    </div>
                   )}
-                </div>
+                  
+                  {/* Show active tasks */}
+                  {myActiveTasks.length > 0 && (
+                    <div>
+                      {myRequestedTasks.length > 0 && (
+                        <h3 className="text-lg font-semibold text-[#1A1A1A] mb-4 mt-6">Active Deliveries</h3>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+                        {myActiveTasks.map((task) =>
+                          task.id ? (
+                            <RequestCard key={task.id} request={task} currentUserId={user.uid} />
+                          ) : null
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
