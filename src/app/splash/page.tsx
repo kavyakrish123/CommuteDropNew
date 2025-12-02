@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
+import { AnimatedLogo } from "@/components/ui/AnimatedLogo";
 
 export default function SplashPage() {
   const router = useRouter();
@@ -50,15 +51,15 @@ export default function SplashPage() {
   return (
     <div className="min-h-screen bg-[#EFFFEE] flex flex-col items-center justify-center p-8">
       {/* Logo/Icon */}
-      <div className="w-32 h-32 bg-[#00C57E] rounded-soft-lg flex items-center justify-center mb-8 shadow-card">
-        <span className="text-6xl">📦</span>
+      <div className="mb-8">
+        <AnimatedLogo size="lg" />
       </div>
 
       {/* App Name */}
-      <h1 className="text-4xl font-bold text-[#1A1A1A] mb-4">Pikkrr</h1>
+      <h1 className="text-4xl font-bold text-[#1A1A1A] mb-4 animate-fadeIn">Pikkrr</h1>
 
       {/* Tagline */}
-      <p className="text-lg text-[#666666] text-center mb-12">
+      <p className="text-lg text-[#666666] text-center mb-12 animate-fadeIn" style={{ animationDelay: "0.2s", animationFillMode: "both" }}>
         Earn from your commute
       </p>
 

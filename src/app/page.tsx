@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { PlatformDisclaimer } from "@/components/ui/PlatformDisclaimer";
+import { AnimatedLogo } from "@/components/ui/AnimatedLogo";
 
 export default function Home() {
   const router = useRouter();
@@ -21,11 +22,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#EFFFEE] flex items-center justify-center">
       <div className="text-center">
-        <div className="w-32 h-32 bg-[#00C57E] rounded-soft-lg flex items-center justify-center mx-auto mb-8 shadow-card">
-          <span className="text-6xl">📦</span>
+        <div className="flex justify-center mb-8">
+          <AnimatedLogo size="lg" />
         </div>
-        <h1 className="text-4xl font-bold text-[#1A1A1A] mb-4">Pikkrr</h1>
-        <p className="text-lg text-[#666666] mb-12">Earn from your commute</p>
+        <h1 className="text-4xl font-bold text-[#1A1A1A] mb-4 animate-fadeIn">Pikkrr</h1>
+        <p className="text-lg text-[#666666] mb-12 animate-fadeIn" style={{ animationDelay: "0.2s", animationFillMode: "both" }}>Earn from your commute</p>
         <div className="w-12 h-12 border-4 border-[#00C57E] border-t-transparent rounded-full animate-spin mx-auto"></div>
       </div>
     </div>

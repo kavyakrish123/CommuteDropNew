@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PhoneAuthForm } from "@/components/forms/PhoneAuthForm";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import { AnimatedLogo } from "@/components/ui/AnimatedLogo";
 
 export default function AuthPage() {
   const { toasts, showToast, removeToast } = useToast();
@@ -13,11 +14,11 @@ export default function AuthPage() {
       <div className="max-w-md w-full">
         {/* Logo/Brand Section */}
         <div className="text-center mb-12 mt-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#00C57E] rounded-soft-lg shadow-card mb-4">
-            <span className="text-4xl">📦</span>
+          <div className="flex justify-center mb-6">
+            <AnimatedLogo size="md" />
           </div>
-          <h1 className="text-3xl font-bold text-[#1A1A1A] mb-2">Pikkrr</h1>
-          <p className="text-[#666666]">Earn from your commute</p>
+          <h1 className="text-3xl font-bold text-[#1A1A1A] mb-2 animate-fadeIn">Pikkrr</h1>
+          <p className="text-[#666666] animate-fadeIn" style={{ animationDelay: "0.2s", animationFillMode: "both" }}>Earn from your commute</p>
         </div>
 
         {/* Auth Card */}
