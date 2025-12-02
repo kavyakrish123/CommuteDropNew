@@ -230,7 +230,8 @@ export async function approveRiderRequest(
   const pickupDeadline = new Date();
   pickupDeadline.setMinutes(pickupDeadline.getMinutes() + 30);
   
-  // Approve the selected rider and clear the queue
+  // Approve the selected rider, clear the queue, and automatically enable tracking
+  // Tracking is mandatory and starts immediately when rider is approved
   await updateDoc(docRef, {
     commuterId: riderId,
     requestedRiders: [],
@@ -238,6 +239,7 @@ export async function approveRiderRequest(
     status: "approved",
     pickupDeadline: Timestamp.fromDate(pickupDeadline),
     pickupDeadlineExtended: false,
+    trackingEnabled: true, // Mandatory tracking enabled automatically
     updatedAt: serverTimestamp(),
   });
 }
@@ -709,8 +711,9 @@ export async function enableTracking(requestId: string, commuterId: string): Pro
     throw new Error("Only the assigned rider can enable tracking");
   }
   
-  if (request.status !== "picked" && request.status !== "in_transit") {
-    throw new Error("Tracking can only be enabled during transit");
+  // Tracking is now mandatory from approval onwards, so allow enabling from approved status
+  if (!["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status)) {
+    throw new Error("Tracking can only be enabled during active delivery");
   }
   
   const docRef = doc(db, "requests", requestId);
@@ -761,12 +764,28 @@ export async function updateRiderLocation(
     throw new Error("Only the assigned rider can update location");
   }
   
+  // Tracking is mandatory, but allow updates even if trackingEnabled flag is false
+  // (in case it wasn't set properly)
   if (!request.trackingEnabled) {
+    // Auto-enable tracking if it's not enabled but rider is approved
+    if (["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status)) {
+      // Silently enable tracking
+      const docRef = doc(db, "requests", requestId);
+      await updateDoc(docRef, {
+        trackingEnabled: true,
+        riderLat: lat,
+        riderLng: lng,
+        lastLocationUpdate: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return;
+    }
     throw new Error("Tracking is not enabled for this delivery");
   }
   
-  if (request.status !== "picked" && request.status !== "in_transit") {
-    throw new Error("Location can only be updated during transit");
+  // Allow location updates from approved status onwards until completed
+  if (!["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit", "delivered"].includes(request.status)) {
+    throw new Error("Location can only be updated during active delivery");
   }
   
   const docRef = doc(db, "requests", requestId);

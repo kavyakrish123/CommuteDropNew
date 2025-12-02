@@ -389,13 +389,7 @@ export default function RequestDetailPage() {
       }
       return;
     }
-    if (!request.trackingEnabled) {
-      if (locationUpdateIntervalRef.current) {
-        clearInterval(locationUpdateIntervalRef.current);
-        locationUpdateIntervalRef.current = null;
-      }
-      return;
-    }
+    // Only track if user is the assigned rider
     if (request.commuterId !== user.uid) {
       if (locationUpdateIntervalRef.current) {
         clearInterval(locationUpdateIntervalRef.current);
@@ -403,7 +397,27 @@ export default function RequestDetailPage() {
       }
       return;
     }
-    if (request.status !== "picked" && request.status !== "in_transit") {
+
+    // Tracking is mandatory from approval until completion
+    // Auto-enable tracking if not enabled (should be enabled on approval, but just in case)
+    if (!request.trackingEnabled && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status)) {
+      // Auto-enable tracking
+      enableTracking(requestId, user.uid).catch((error) => {
+        console.error("Error auto-enabling tracking:", error);
+      });
+    }
+
+    // Start tracking from approved status onwards until completed
+    if (!["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit", "delivered"].includes(request.status)) {
+      if (locationUpdateIntervalRef.current) {
+        clearInterval(locationUpdateIntervalRef.current);
+        locationUpdateIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Stop tracking if delivery is completed
+    if (request.status === "completed" || request.status === "cancelled" || request.status === "expired") {
       if (locationUpdateIntervalRef.current) {
         clearInterval(locationUpdateIntervalRef.current);
         locationUpdateIntervalRef.current = null;
@@ -493,8 +507,8 @@ export default function RequestDetailPage() {
               <ParcelTimeline status={request.status} />
             </div>
 
-            {/* Delivery Tracking - Show for senders when tracking is enabled */}
-            {isSender && request.trackingEnabled && (request.status === "picked" || request.status === "in_transit") && (
+            {/* Delivery Tracking - Show for senders when tracking is enabled (mandatory from approved) */}
+            {isSender && request.trackingEnabled && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit", "delivered"].includes(request.status) && (
               <DeliveryTracking request={request} />
             )}
 
@@ -519,20 +533,43 @@ export default function RequestDetailPage() {
             </div>
             {/* Status message for riders */}
             {isCommuter && (
-              <div className="mt-3 pt-3 border-t border-indigo-200">
-                <p className="text-sm font-semibold text-gray-900 mb-1">Current Status:</p>
-                <p className="text-base text-gray-700">
-                  {request.status === "approved" && "✅ You've been approved! Ready to pick up the item."}
-                  {request.status === "waiting_pickup" && "📍 Waiting for pickup. Enter the pickup OTP below."}
-                  {request.status === "pickup_otp_pending" && "⏳ Pickup OTP verification pending. Enter OTP below."}
-                  {request.status === "picked" && "✅ Item picked up! Start delivery when ready."}
-                  {request.status === "in_transit" && "🚚 In transit. Enter drop OTP when you arrive."}
-                  {(request.status === "delivered" || request.status === "completed") && "✅ Delivery completed!"}
-                  {request.status === "requested" && "⏳ Waiting for sender approval."}
-                  {request.status === "rejected" && "❌ Your request was rejected."}
-                  {!["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit", "delivered", "completed", "requested", "rejected"].includes(request.status) && 
-                    `Status: ${request.status}`}
-                </p>
+              <div className="mt-3 pt-3 border-t border-indigo-200 space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 mb-1">Current Status:</p>
+                  <p className="text-base text-gray-700">
+                    {request.status === "approved" && "✅ You've been approved! Ready to pick up the item."}
+                    {request.status === "waiting_pickup" && "📍 Waiting for pickup. Enter the pickup OTP below."}
+                    {request.status === "pickup_otp_pending" && "⏳ Pickup OTP verification pending. Enter OTP below."}
+                    {request.status === "picked" && "✅ Item picked up! Start delivery when ready."}
+                    {request.status === "in_transit" && "🚚 In transit. Enter drop OTP when you arrive."}
+                    {(request.status === "delivered" || request.status === "completed") && "✅ Delivery completed!"}
+                    {request.status === "requested" && "⏳ Waiting for sender approval."}
+                    {request.status === "rejected" && "❌ Your request was rejected."}
+                    {!["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit", "delivered", "completed", "requested", "rejected"].includes(request.status) && 
+                      `Status: ${request.status}`}
+                  </p>
+                </div>
+                {/* Mandatory Tracking Notice */}
+                {["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status) && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <p className="text-sm font-semibold text-blue-900 mb-1">📍 Location Tracking Active</p>
+                        <p className="text-xs text-blue-800">
+                          Your location is being tracked in real-time until delivery is completed. This is mandatory for safety and transparency. The sender can see your location on the tracking page.
+                        </p>
+                        {request.trackingEnabled && request.riderLat && request.riderLng && (
+                          <p className="text-xs text-blue-700 mt-1 font-medium">
+                            ✅ Location sharing active
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {/* Status message for senders */}
@@ -866,69 +903,49 @@ export default function RequestDetailPage() {
                   Start Delivery
                 </button>
 
-                {/* Tracking Option */}
+                {/* Tracking Status - Mandatory and Automatic */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-900 mb-2">
-                    📍 Enable Location Tracking
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <p className="text-sm font-semibold text-blue-900">📍 Location Tracking (Mandatory)</p>
+                  </div>
+                  <p className="text-xs text-blue-800 mb-2">
+                    Your location is automatically tracked in real-time until delivery is completed. This is required for safety and transparency. Updates every 30 seconds.
                   </p>
-                  <p className="text-xs text-gray-600 mb-3">
-                    Allow the sender to track your location during delivery. Your location will update automatically every 30 seconds.
-                  </p>
-                  {!request.trackingEnabled ? (
-                    <button
-                      onClick={handleEnableTracking}
-                      disabled={isUpdatingLocation}
-                      className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isUpdatingLocation ? "Enabling..." : "Enable Tracking"}
-                    </button>
+                  {request.trackingEnabled && request.riderLat && request.riderLng ? (
+                    <p className="text-xs text-green-700 font-medium">✅ Location tracking active</p>
                   ) : (
-                    <button
-                      onClick={handleDisableTracking}
-                      className="w-full bg-gray-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-gray-700"
-                    >
-                      Disable Tracking
-                    </button>
+                    <p className="text-xs text-yellow-700 font-medium">⏳ Starting location tracking...</p>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Tracking Controls for in_transit status */}
-            {isCommuter && request.status === "in_transit" && (
+            {/* Tracking Status - Mandatory and automatic */}
+            {isCommuter && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status) && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">
-                      📍 Location Tracking
+                    <p className="text-sm font-semibold text-blue-900 mb-1">
+                      📍 Location Tracking (Mandatory)
                     </p>
-                    <p className="text-xs text-gray-600">
-                      {request.trackingEnabled 
-                        ? "Your location is being shared with the sender. Updates every 30 seconds."
-                        : "Enable tracking to let the sender see your location during delivery."}
+                    <p className="text-xs text-blue-800">
+                      Your location is automatically tracked in real-time until delivery is completed. This is required for safety and transparency. Updates every 30 seconds.
                     </p>
                   </div>
-                  {request.trackingEnabled && (
+                  {request.trackingEnabled && request.riderLat && request.riderLng && (
                     <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
                       Active
                     </span>
                   )}
                 </div>
-                {!request.trackingEnabled ? (
-                  <button
-                    onClick={handleEnableTracking}
-                    disabled={isUpdatingLocation}
-                    className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isUpdatingLocation ? "Enabling..." : "Enable Tracking"}
-                  </button>
+                {request.trackingEnabled && request.riderLat && request.riderLng ? (
+                  <p className="text-xs text-green-700 font-medium mt-2">✅ Location sharing active</p>
                 ) : (
-                  <button
-                    onClick={handleDisableTracking}
-                    className="w-full bg-gray-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-gray-700"
-                  >
-                    Disable Tracking
-                  </button>
+                  <p className="text-xs text-yellow-700 font-medium mt-2">⏳ Starting location tracking...</p>
                 )}
               </div>
             )}
