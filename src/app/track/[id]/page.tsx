@@ -25,11 +25,14 @@ export default function PublicTrackingPage() {
     }
 
     setLoading(true);
+    setError(null);
     
-    // Subscribe to real-time updates
-    const unsubscribe = subscribeToRequest(
-      requestId,
-      (req) => {
+    let unsubscribe: (() => void) | null = null;
+    
+    // First try to get the request directly (works for unauthenticated users)
+    const loadRequest = async () => {
+      try {
+        const req = await getRequest(requestId);
         if (!req) {
           setError("Delivery not found");
           setLoading(false);
@@ -38,15 +41,51 @@ export default function PublicTrackingPage() {
         setRequest(req);
         setLoading(false);
         setError(null);
-      },
-      (err) => {
+        
+        // Then subscribe to real-time updates (if user is authenticated, this will work)
+        // If not authenticated, we'll just show the initial data
+        try {
+          unsubscribe = subscribeToRequest(
+            requestId,
+            (updatedReq) => {
+              if (updatedReq) {
+                setRequest(updatedReq);
+                setError(null);
+              } else {
+                // Request was deleted
+                setError("Delivery not found");
+              }
+            },
+            (err) => {
+              // Silently fail for unauthenticated users - they can still see the initial data
+              console.warn("Real-time updates not available (this is normal for unauthenticated users):", err);
+            }
+          );
+        } catch (subscribeError) {
+          // Subscription failed, but we already have the data from getRequest
+          console.warn("Could not subscribe to real-time updates:", subscribeError);
+        }
+      } catch (err: any) {
         console.error("Error loading tracking:", err);
-        setError("Failed to load delivery tracking");
+        // Check for specific Firestore errors
+        if (err?.code === "permission-denied") {
+          setError("Access denied. Please check if the tracking link is correct.");
+        } else if (err?.code === "not-found") {
+          setError("Delivery not found");
+        } else {
+          setError("Failed to load delivery tracking. Please check the tracking link.");
+        }
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    loadRequest();
+    
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [requestId]);
 
   if (loading) {
