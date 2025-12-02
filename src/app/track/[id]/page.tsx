@@ -32,12 +32,24 @@ export default function PublicTrackingPage() {
     // First try to get the request directly (works for unauthenticated users)
     const loadRequest = async () => {
       try {
-        const req = await getRequest(requestId);
-        if (!req) {
+        // Use getDoc directly to ensure it works without authentication
+        const { doc, getDoc } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase/client");
+        
+        const docRef = doc(db, "requests", requestId);
+        const docSnap = await getDoc(docRef);
+        
+        if (!docSnap.exists()) {
           setError("Delivery not found");
           setLoading(false);
           return;
         }
+        
+        const req = {
+          id: docSnap.id,
+          ...docSnap.data(),
+        } as DeliveryRequest;
+        
         setRequest(req);
         setLoading(false);
         setError(null);
@@ -68,12 +80,12 @@ export default function PublicTrackingPage() {
       } catch (err: any) {
         console.error("Error loading tracking:", err);
         // Check for specific Firestore errors
-        if (err?.code === "permission-denied") {
-          setError("Access denied. Please check if the tracking link is correct.");
-        } else if (err?.code === "not-found") {
-          setError("Delivery not found");
+        if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
+          setError("Access denied. The tracking link may be invalid or the delivery may have been removed. Please check with the sender.");
+        } else if (err?.code === "not-found" || err?.message?.includes("not found")) {
+          setError("Delivery not found. Please check if the tracking link is correct.");
         } else {
-          setError("Failed to load delivery tracking. Please check the tracking link.");
+          setError("Failed to load delivery tracking. Please check the tracking link or try again later.");
         }
         setLoading(false);
       }
