@@ -49,7 +49,7 @@ export default function CreateRequestPage() {
   const form = useForm<z.infer<typeof createRequestSchema>>({
     resolver: zodResolver(createRequestSchema),
     defaultValues: {
-      priceOffered: null,
+      priceOffered: 5,
       pickupDetails: "",
       dropDetails: "",
       sendNow: true,
@@ -258,22 +258,27 @@ export default function CreateRequestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
+    <div className="min-h-screen bg-[#EFFFEE]">
+      {/* Mobile App Style Header */}
+      <header className="bg-white shadow-card border-b border-gray-200 sticky top-0 z-40">
+        <div className="px-4 py-4 flex items-center gap-3">
           <Link
             href="/app"
-            className="text-gray-600 hover:text-gray-900"
+            className="text-gray-600 hover:text-gray-900 active:scale-95 transition-transform"
             aria-label="Back"
           >
-            ← Back
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Create Request</h1>
-          <span className="text-sm text-gray-500 ml-auto">Step {step} of 4</span>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-[#1A1A1A]">Create Delivery Request</h1>
+            <p className="text-xs text-[#666666]">Step {step} of 4</p>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main className="px-4 py-4 pb-24">
                 {/* SG Compliance Warning */}
                 {step === 1 && (
                   <div className="space-y-3 mb-6">
@@ -301,22 +306,36 @@ export default function CreateRequestPage() {
                   </div>
                 )}
 
+        {/* Progress Indicator */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-[#666666]">Progress</span>
+            <span className="text-xs font-medium text-[#00C57E]">{step}/4</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-[#00C57E] h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(step / 4) * 100}%` }}
+            />
+          </div>
+        </div>
+
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="bg-white rounded-lg shadow-md p-6 space-y-6"
+          className="bg-white rounded-soft-lg shadow-card-lg p-5 space-y-5"
         >
           {/* Step 1: Item Details */}
           {step === 1 && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   Item Description *
                 </label>
                 <textarea
                   {...form.register("itemDescription")}
-                  rows={3}
+                  rows={4}
                   placeholder="Describe the item clearly..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-soft-lg focus:ring-2 focus:ring-[#00C57E] focus:border-[#00C57E] text-base text-black font-bold resize-none"
                   style={{ color: "#000000", fontWeight: 700 }}
                 />
                 {form.formState.errors.itemDescription && (
@@ -327,12 +346,13 @@ export default function CreateRequestPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   Category *
                 </label>
                 <select
                   {...form.register("category")}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-soft-lg focus:ring-2 focus:ring-[#00C57E] focus:border-[#00C57E] text-base text-black font-bold bg-white"
+                  style={{ color: "#000000", fontWeight: 700 }}
                 >
                   <option value="">Select a category</option>
                   {CATEGORIES.map((cat) => (
@@ -349,24 +369,47 @@ export default function CreateRequestPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   Item Photo *
                 </label>
                 <div className="space-y-3">
                   {itemPhotoUrl && (
-                    <img
-                      src={itemPhotoUrl}
-                      alt="Item preview"
-                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
-                    />
+                    <div className="relative">
+                      <img
+                        src={itemPhotoUrl}
+                        alt="Item preview"
+                        className="w-full h-48 object-cover rounded-soft-lg border-2 border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setItemPhoto(null);
+                          setItemPhotoUrl(null);
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors"
+                        aria-label="Remove photo"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
                   )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                  />
-                  <p className="text-xs text-gray-500">Upload a clear photo (max 5MB)</p>
+                  <label className="block">
+                    <div className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-soft-lg text-center cursor-pointer hover:border-[#00C57E] transition-colors">
+                      <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <p className="text-sm font-medium text-gray-700">Tap to upload photo</p>
+                      <p className="text-xs text-gray-500 mt-1">Max 5MB</p>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               </div>
 
@@ -374,7 +417,7 @@ export default function CreateRequestPage() {
                 type="button"
                 onClick={handleStepContinue}
                 disabled={!itemPhoto || !form.watch("category") || !form.watch("itemDescription")}
-                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#00C57E] text-white py-4 px-4 rounded-soft-lg font-semibold hover:bg-[#00A869] active:bg-[#00995A] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 shadow-card"
               >
                 Continue
               </button>
@@ -385,7 +428,7 @@ export default function CreateRequestPage() {
           {step === 2 && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   Pickup Location * (Postal Code or Address)
                 </label>
                 <input
@@ -396,7 +439,7 @@ export default function CreateRequestPage() {
                     form.setValue("pickupPincode", e.target.value);
                     debouncedValidatePickup(e.target.value);
                   }}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold ${
+                  className={`w-full px-4 py-3 border-2 rounded-soft-lg focus:ring-2 focus:ring-[#00C57E] focus:border-[#00C57E] text-base text-black font-bold ${
                     pickupValidation.status === "valid"
                       ? "border-green-500 bg-green-50"
                       : pickupValidation.status === "invalid"
@@ -437,14 +480,14 @@ export default function CreateRequestPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   Pickup Details (Optional)
                 </label>
                 <textarea
                   {...form.register("pickupDetails")}
                   rows={3}
                   placeholder="Building name, floor, landmark, etc. (Optional for privacy)"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-soft-lg focus:ring-2 focus:ring-[#00C57E] focus:border-[#00C57E] text-base text-black font-bold resize-none"
                   style={{ color: "#000000", fontWeight: 700 }}
                 />
                 {form.formState.errors.pickupDetails && (
@@ -457,11 +500,11 @@ export default function CreateRequestPage() {
                 </p>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50"
+                  className="flex-1 border-2 border-gray-300 text-gray-700 py-4 px-4 rounded-soft-lg font-semibold hover:bg-gray-50 active:scale-[0.98] transition-all duration-150"
                 >
                   Back
                 </button>
@@ -469,7 +512,7 @@ export default function CreateRequestPage() {
                   type="button"
                   onClick={handleStepContinue}
                   disabled={pickupValidation.status !== "valid"}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-[#00C57E] text-white py-4 px-4 rounded-soft-lg font-semibold hover:bg-[#00A869] active:bg-[#00995A] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 shadow-card"
                 >
                   Continue
                 </button>
@@ -481,7 +524,7 @@ export default function CreateRequestPage() {
           {step === 3 && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   Drop Location * (Postal Code or Address)
                 </label>
                 <input
@@ -492,7 +535,7 @@ export default function CreateRequestPage() {
                     form.setValue("dropPincode", e.target.value);
                     debouncedValidateDrop(e.target.value);
                   }}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold ${
+                  className={`w-full px-4 py-3 border-2 rounded-soft-lg focus:ring-2 focus:ring-[#00C57E] focus:border-[#00C57E] text-base text-black font-bold ${
                     dropValidation.status === "valid"
                       ? "border-green-500 bg-green-50"
                       : dropValidation.status === "invalid"
@@ -533,14 +576,14 @@ export default function CreateRequestPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   Drop Details (Optional)
                 </label>
                 <textarea
                   {...form.register("dropDetails")}
                   rows={3}
                   placeholder="Building name, floor, landmark, etc. (Optional for privacy)"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-soft-lg focus:ring-2 focus:ring-[#00C57E] focus:border-[#00C57E] text-base text-black font-bold resize-none"
                   style={{ color: "#000000", fontWeight: 700 }}
                 />
                 {form.formState.errors.dropDetails && (
@@ -553,11 +596,11 @@ export default function CreateRequestPage() {
                 </p>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50"
+                  className="flex-1 border-2 border-gray-300 text-gray-700 py-4 px-4 rounded-soft-lg font-semibold hover:bg-gray-50 active:scale-[0.98] transition-all duration-150"
                 >
                   Back
                 </button>
@@ -565,7 +608,7 @@ export default function CreateRequestPage() {
                   type="button"
                   onClick={handleStepContinue}
                   disabled={dropValidation.status !== "valid"}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-[#00C57E] text-white py-4 px-4 rounded-soft-lg font-semibold hover:bg-[#00A869] active:bg-[#00995A] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 shadow-card"
                 >
                   Continue
                 </button>
@@ -582,7 +625,7 @@ export default function CreateRequestPage() {
                   When to Send?
                 </label>
                 <div className="space-y-3">
-                  <label className="flex items-center gap-3 p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-[#00C57E] transition-colors">
+                  <label className="flex items-center gap-3 p-4 border-2 border-gray-300 rounded-soft-lg cursor-pointer hover:border-[#00C57E] active:scale-[0.98] transition-all">
                     <input
                       type="radio"
                       {...form.register("sendNow")}
@@ -592,11 +635,11 @@ export default function CreateRequestPage() {
                       className="w-5 h-5 text-[#00C57E] focus:ring-[#00C57E]"
                     />
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-900">Send Now</p>
-                      <p className="text-sm text-gray-600">Riders can pick up immediately</p>
+                      <p className="font-semibold text-[#1A1A1A]">Send Now</p>
+                      <p className="text-sm text-[#666666]">Riders can pick up immediately</p>
                     </div>
                   </label>
-                  <label className="flex items-center gap-3 p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-[#00C57E] transition-colors">
+                  <label className="flex items-center gap-3 p-4 border-2 border-gray-300 rounded-soft-lg cursor-pointer hover:border-[#00C57E] active:scale-[0.98] transition-all">
                     <input
                       type="radio"
                       {...form.register("sendNow")}
@@ -606,8 +649,8 @@ export default function CreateRequestPage() {
                       className="w-5 h-5 text-[#00C57E] focus:ring-[#00C57E]"
                     />
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-900">Schedule for Later</p>
-                      <p className="text-sm text-gray-600">Riders will know this is for a specific time</p>
+                      <p className="font-semibold text-[#1A1A1A]">Schedule for Later</p>
+                      <p className="text-sm text-[#666666]">Riders will know this is for a specific time</p>
                     </div>
                   </label>
                 </div>
@@ -616,7 +659,7 @@ export default function CreateRequestPage() {
               {/* Scheduled Date/Time */}
               {form.watch("sendNow") === false && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                     Scheduled Date & Time *
                   </label>
                   <input
@@ -629,7 +672,7 @@ export default function CreateRequestPage() {
                         form.setValue("scheduledFor", null);
                       }
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-soft-lg focus:ring-2 focus:ring-[#00C57E] focus:border-[#00C57E] text-base text-black font-bold"
                     style={{ color: "#000000", fontWeight: 700 }}
                   />
                   {form.formState.errors.scheduledFor && (
@@ -644,68 +687,75 @@ export default function CreateRequestPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tip (Optional)
+                <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
+                  Tip Amount (SGD)
                 </label>
-                <input
-                  {...form.register("priceOffered", { valueAsNumber: true })}
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="5.00"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
-                  style={{ color: "#000000", fontWeight: 700 }}
-                />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[#1A1A1A]">$</span>
+                  <input
+                    {...form.register("priceOffered", { valueAsNumber: true })}
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    placeholder="5.00"
+                    className="w-full pl-8 pr-4 py-3.5 border-2 border-gray-300 rounded-soft-lg focus:ring-2 focus:ring-[#00C57E] focus:border-[#00C57E] text-lg text-black font-bold"
+                    style={{ color: "#000000", fontWeight: 700 }}
+                  />
+                </div>
                 {form.formState.errors.priceOffered && (
                   <p className="mt-1 text-sm text-red-600">
                     {form.formState.errors.priceOffered.message}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-gray-500">
-                  Optional: Add a tip to show appreciation
+                <p className="mt-2 text-xs text-[#666666]">
+                  💡 Tip amount helps attract riders. Default is $5.
                 </p>
               </div>
 
               {/* Review Summary */}
-              <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                <h3 className="font-semibold text-gray-900">Review Your Request</h3>
-                <div className="text-sm text-gray-700 space-y-1">
-                  <p>
-                    <strong>Item:</strong> {form.watch("itemDescription")}
-                  </p>
-                  <p>
-                    <strong>Category:</strong>{" "}
-                    {CATEGORIES.find((c) => c.value === form.watch("category"))?.label}
-                  </p>
-                  <p>
-                    <strong>Pickup:</strong> {form.watch("pickupPincode")}
-                  </p>
-                  <p>
-                    <strong>Drop:</strong> {form.watch("dropPincode")}
-                  </p>
-                  <p>
-                    <strong>Timing:</strong> {form.watch("sendNow") ? "Send Now" : form.watch("scheduledFor") ? `Scheduled for ${form.watch("scheduledFor")?.toLocaleString()}` : "Not set"}
-                  </p>
-                  {form.watch("priceOffered") && (
-                    <p>
-                      <strong>Tip:</strong> ${form.watch("priceOffered")}
-                    </p>
-                  )}
+              <div className="bg-[#EFFFEE] border-2 border-[#00C57E] p-4 rounded-soft-lg space-y-3">
+                <h3 className="font-bold text-[#1A1A1A] text-base">Review Your Request</h3>
+                <div className="text-sm text-[#1A1A1A] space-y-2">
+                  <div className="flex justify-between">
+                    <span className="font-medium text-[#666666]">Item:</span>
+                    <span className="font-semibold">{form.watch("itemDescription")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-[#666666]">Category:</span>
+                    <span className="font-semibold">{CATEGORIES.find((c) => c.value === form.watch("category"))?.label}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-[#666666]">Pickup:</span>
+                    <span className="font-semibold">{form.watch("pickupPincode")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-[#666666]">Drop:</span>
+                    <span className="font-semibold">{form.watch("dropPincode")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-[#666666]">Timing:</span>
+                    <span className="font-semibold">{form.watch("sendNow") ? "Send Now" : form.watch("scheduledFor") ? `Scheduled for ${form.watch("scheduledFor")?.toLocaleString()}` : "Not set"}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-[#00C57E] pt-2">
+                    <span className="font-medium text-[#666666]">Tip:</span>
+                    <span className="font-bold text-[#00C57E] text-lg">${form.watch("priceOffered") || 5}</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50"
+                  className="flex-1 border-2 border-gray-300 text-gray-700 py-4 px-4 rounded-soft-lg font-semibold hover:bg-gray-50 active:scale-[0.98] transition-all duration-150"
                 >
                   Back
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-[#00C57E] text-white py-4 px-4 rounded-soft-lg font-semibold hover:bg-[#00A869] active:bg-[#00995A] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 shadow-card"
                 >
                   {uploading ? "Creating..." : "Create Request"}
                 </button>

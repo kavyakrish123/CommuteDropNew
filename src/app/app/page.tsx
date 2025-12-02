@@ -34,6 +34,7 @@ import { LifetimeEarnings } from "@/components/ui/LifetimeEarnings";
 import { InstallAppEducation } from "@/components/ui/InstallAppEducation";
 import { ShareApp } from "@/components/ui/ShareApp";
 import { RiderRequestModal } from "@/components/ui/RiderRequestModal";
+import { InstallAppButton } from "@/components/ui/InstallAppButton";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -242,35 +243,35 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#EFFFEE]">
       {/* Header */}
       <header className="bg-white shadow-card border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center gap-3">
+          <h1 className="text-xl font-bold">
             <span className="text-[#00C57E]">Pikk</span>
             <span className="text-[#1A1A1A]">rr</span>
           </h1>
-          <button
-            onClick={() => setMenuOpen(true)}
-            className="p-2 text-gray-600 hover:text-gray-900 active:bg-gray-100 rounded-lg transition-colors duration-150"
-            aria-label="Open menu"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            <InstallAppButton />
+            <button
+              onClick={() => setMenuOpen(true)}
+              className="p-2 text-gray-600 hover:text-gray-900 active:bg-gray-100 rounded-lg transition-colors duration-150"
+              aria-label="Open menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-6 pb-24">
-        {/* Install App Education */}
-        <InstallAppEducation />
-
         {/* Lifetime Earnings - Motivational Section */}
-        <div className="mb-6">
+        <div className="mb-4">
           <LifetimeEarnings />
         </div>
 
-        {/* Share App Banner */}
-        <div className="mb-6">
-          <ShareApp variant="card" />
+        {/* Compact Share App */}
+        <div className="mb-4">
+          <ShareApp variant="button" className="w-full" />
         </div>
 
         {/* Tabs */}

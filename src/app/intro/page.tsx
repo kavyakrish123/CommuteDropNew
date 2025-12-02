@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { EducationBanner } from "@/components/ui/EducationBanner";
 
 export default function IntroPage() {
   const router = useRouter();
@@ -45,6 +46,15 @@ export default function IntroPage() {
 
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-8 pb-8">
+        {/* Education Banner */}
+        <div className="w-full max-w-md mb-6">
+          <EducationBanner
+            title="Welcome to Pikkrr"
+            content="Connect with commuters to deliver items along their route. Earn money while helping others, and reduce carbon emissions by using existing transportation."
+            type="info"
+          />
+        </div>
+
         {/* Illustration */}
         <div className="w-64 h-64 bg-[#EFFFEE] rounded-soft-lg flex items-center justify-center mb-8">
           {currentStep === 1 && <span className="text-8xl">🚇</span>}

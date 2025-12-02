@@ -295,28 +295,18 @@ export function ShareApp({ variant = "button", className = "" }: ShareAppProps) 
     );
   }
 
-  // Card variant
+  // Card variant - now more compact
   return (
     <>
-      <div className={`bg-white rounded-soft-lg shadow-card border border-gray-200 p-6 ${className}`}>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-[#00C57E] rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">Share Pikkrr</h3>
-            <p className="text-sm text-gray-600">Help us grow by sharing with friends</p>
-          </div>
-        </div>
-        <button
-          onClick={handleNativeShare}
-          className="w-full px-4 py-2.5 bg-[#00C57E] text-white rounded-soft-lg font-semibold hover:bg-[#00A869] active:bg-[#00995A] transition-all duration-150 shadow-card"
-        >
-          Share Now
-        </button>
-      </div>
+      <button
+        onClick={handleNativeShare}
+        className={`flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-[#00C57E] text-[#00C57E] rounded-soft-lg font-semibold hover:bg-[#EFFFEE] active:bg-[#EFFFEE] active:scale-[0.98] transition-all duration-150 shadow-card ${className}`}
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+        </svg>
+        Share App
+      </button>
 
       {/* Share Modal - same as above */}
       {showShareModal && (
