@@ -35,8 +35,9 @@ export function CameraCapture({
 
   const detectFace = async (imageElement: HTMLImageElement | HTMLVideoElement): Promise<boolean> => {
     if (!isFaceDetectorAvailable) {
-      // FaceDetector is required - cannot proceed without it
-      return false;
+      // If FaceDetector is not available, allow capture but warn user
+      // This makes the feature work on more browsers
+      return true; // Allow capture without face detection
     }
 
     try {
@@ -97,25 +98,30 @@ export function CameraCapture({
         videoRef.current.srcObject = stream;
         videoRef.current.play();
 
-        // Start continuous face detection while camera is on
-        const checkFace = async () => {
-          if (videoRef.current && videoRef.current.readyState === 4) {
-            setIsDetecting(true);
-            const detected = await detectFace(videoRef.current);
-            setFaceDetected(detected);
-            setIsDetecting(false);
-          }
-        };
+        // Start continuous face detection while camera is on (only if API is available)
+        if (isFaceDetectorAvailable) {
+          const checkFace = async () => {
+            if (videoRef.current && videoRef.current.readyState === 4) {
+              setIsDetecting(true);
+              const detected = await detectFace(videoRef.current);
+              setFaceDetected(detected);
+              setIsDetecting(false);
+            }
+          };
 
-        // Check for face every 500ms
-        const faceCheckInterval = setInterval(checkFace, 500);
+          // Check for face every 500ms
+          const faceCheckInterval = setInterval(checkFace, 500);
 
-        // Cleanup interval when component unmounts or camera stops
-        videoRef.current.addEventListener("loadedmetadata", checkFace);
-        
-        return () => {
-          clearInterval(faceCheckInterval);
-        };
+          // Cleanup interval when component unmounts or camera stops
+          videoRef.current.addEventListener("loadedmetadata", checkFace);
+          
+          return () => {
+            clearInterval(faceCheckInterval);
+          };
+        } else {
+          // If face detection is not available, allow capture anyway
+          setFaceDetected(true);
+        }
       }
     } catch (error: any) {
       console.error("Camera error:", error);
@@ -157,12 +163,13 @@ export function CameraCapture({
 
       ctx.drawImage(video, 0, 0);
 
-      // Final face detection check before capturing - MANDATORY
+      // Final face detection check before capturing
       setIsDetecting(true);
       const detected = await detectFace(video);
       setIsDetecting(false);
 
-      if (!detected) {
+      // Only enforce face detection if the API is available
+      if (isFaceDetectorAvailable && !detected) {
         onError("No face detected. Please ensure your face is clearly visible and centered in the camera frame. Only photos with a visible face will be accepted.");
         return;
       }
@@ -206,32 +213,28 @@ export function CameraCapture({
     <div className="space-y-4">
       {!isCapturing && !previewUrl && (
         <div className="space-y-3">
-          {!isFaceDetectorAvailable ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-              <p className="text-sm font-semibold text-red-900 mb-1">Face Detection Not Available</p>
-              <p className="text-xs text-red-800">
-                Your browser doesn't support face detection. Please use Chrome, Edge, or another modern browser to take your selfie.
+          {!isFaceDetectorAvailable && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+              <p className="text-xs text-yellow-800">
+                <strong>Note:</strong> Face detection is not available in this browser. You can still take a selfie, but please ensure your face is clearly visible.
               </p>
             </div>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={startCamera}
-                disabled={disabled}
-                className="w-full bg-[#00C57E] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#00A869] active:bg-[#00995A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Take Selfie with Camera
-              </button>
-              <p className="text-xs text-gray-600 text-center">
-                You must take a live selfie using your camera. Your face must be clearly visible. Stock photos or uploaded images are not allowed.
-              </p>
-            </>
           )}
+          <button
+            type="button"
+            onClick={startCamera}
+            disabled={disabled}
+            className="w-full bg-[#00C57E] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#00A869] active:bg-[#00995A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Take Selfie with Camera
+          </button>
+          <p className="text-xs text-gray-600 text-center">
+            You must take a live selfie using your camera. Your face must be clearly visible. Stock photos or uploaded images are not allowed.
+          </p>
         </div>
       )}
 
@@ -247,8 +250,8 @@ export function CameraCapture({
             />
             <canvas ref={canvasRef} className="hidden" />
             
-            {/* Face detection indicator */}
-            {faceDetected !== null && (
+            {/* Face detection indicator - only show if API is available */}
+            {isFaceDetectorAvailable && faceDetected !== null && (
               <div className="absolute top-4 left-4 right-4">
                 <div
                   className={`px-3 py-2 rounded-lg text-sm font-medium ${
@@ -280,7 +283,7 @@ export function CameraCapture({
             <button
               type="button"
               onClick={capturePhoto}
-              disabled={!faceDetected || isDetecting}
+              disabled={(isFaceDetectorAvailable && !faceDetected) || isDetecting}
               className="px-6 py-2 bg-[#00C57E] text-white rounded-lg font-semibold hover:bg-[#00A869] active:bg-[#00995A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
