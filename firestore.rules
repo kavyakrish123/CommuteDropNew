@@ -9,8 +9,9 @@ service cloud.firestore {
     
     // Requests collection
     match /requests/{requestId} {
-      // Anyone authenticated can read requests
-      allow read: if request.auth != null;
+      // Allow public read access for tracking page (anyone can read)
+      // This enables the public tracking link to work without authentication
+      allow read: if true;
       
       // Anyone authenticated can create a request (must be the sender)
       allow create: if request.auth != null 

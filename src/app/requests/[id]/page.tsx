@@ -16,7 +16,8 @@ import {
   enableTracking,
   disableTracking,
   updateRiderLocation,
-  confirmPayment,
+  confirmSenderPayment,
+  confirmRiderPayment,
   markArrivedAtPickup,
   markArrivedAtDrop,
 } from "@/lib/firestore/requests";
@@ -266,18 +267,34 @@ export default function RequestDetailPage() {
     }
   };
 
-  const handleConfirmPayment = async () => {
+  const handleConfirmSenderPayment = async () => {
     if (!user || !request) return;
 
-    if (!confirm("Confirm that payment has been received? This will allow the delivery to be completed.")) {
+    if (!confirm("Confirm that you have made the payment? This will notify the rider.")) {
       return;
     }
 
     try {
-      await confirmPayment(requestId, user.uid);
-      showToast("Payment confirmed successfully!", "success");
+      await confirmSenderPayment(requestId, user.uid);
+      showToast("Payment confirmation sent! Waiting for rider to acknowledge receipt.", "success");
     } catch (error: any) {
-      console.error("Error confirming payment:", error);
+      console.error("Error confirming sender payment:", error);
+      showToast(error.message || "Failed to confirm payment", "error");
+    }
+  };
+
+  const handleConfirmRiderPayment = async () => {
+    if (!user || !request) return;
+
+    if (!confirm("Confirm that you have received the payment? This will complete the payment confirmation.")) {
+      return;
+    }
+
+    try {
+      await confirmRiderPayment(requestId, user.uid);
+      showToast("Payment received confirmed! Delivery can now be completed.", "success");
+    } catch (error: any) {
+      console.error("Error confirming rider payment:", error);
       showToast(error.message || "Failed to confirm payment", "error");
     }
   };
@@ -420,8 +437,10 @@ export default function RequestDetailPage() {
   const canDeliver = isCommuter && request.status === "in_transit";
   const canMarkArrivedPickup = isCommuter && ["approved", "waiting_pickup", "pickup_otp_pending"].includes(request.status) && !request.arrivedAtPickup;
   const canMarkArrivedDrop = isCommuter && request.status === "in_transit" && !request.arrivedAtDrop;
-  const canConfirmPayment = (isSender || isCommuter) && request.status === "in_transit" && !request.paymentConfirmed;
-  const showPaymentWarning = request.status === "in_transit" && !request.paymentConfirmed;
+  const canConfirmSenderPayment = isSender && request.status === "in_transit" && !request.senderPaymentMade;
+  const canConfirmRiderPayment = isCommuter && request.status === "in_transit" && request.senderPaymentMade && !request.riderPaymentReceived;
+  const showPaymentWarning = request.status === "in_transit" && (!request.senderPaymentMade || !request.riderPaymentReceived);
+  const paymentFullyConfirmed = request.senderPaymentMade && request.riderPaymentReceived;
   // Chat temporarily disabled
   // const canChat = Boolean((isSender && request.commuterId) || isCommuter);
   // const chatAvailable = canChat && ["approved", "waiting_pickup", "pickup_otp_pending", "picked", "in_transit"].includes(request.status);
@@ -870,20 +889,63 @@ export default function RequestDetailPage() {
                     </svg>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-yellow-900 mb-1">
-                        Payment Required Before Delivery
+                        Payment Confirmation Required
                       </p>
                       <p className="text-sm text-yellow-800 mb-3">
-                        <strong>Important:</strong> The item should only be delivered once payment has been confirmed. 
-                        Either the sender or receiver must confirm payment before the delivery can be completed with OTP.
+                        <strong>Important:</strong> Both sender and rider must confirm payment before delivery can be completed.
                       </p>
-                      {canConfirmPayment && (
-                        <button
-                          onClick={handleConfirmPayment}
-                          className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700"
-                        >
-                          I Confirm Payment Has Been Made
-                        </button>
-                      )}
+                      
+                      {/* Payment Status */}
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          {request.senderPaymentMade ? (
+                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          )}
+                          <span className={`text-sm ${request.senderPaymentMade ? 'text-green-700 font-medium' : 'text-gray-600'}`}>
+                            Sender: {request.senderPaymentMade ? 'Payment made ✓' : 'Waiting for sender to confirm payment'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {request.riderPaymentReceived ? (
+                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          )}
+                          <span className={`text-sm ${request.riderPaymentReceived ? 'text-green-700 font-medium' : 'text-gray-600'}`}>
+                            Rider: {request.riderPaymentReceived ? 'Payment received ✓' : request.senderPaymentMade ? 'Waiting for rider to confirm receipt' : 'Waiting for sender confirmation first'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="space-y-2">
+                        {canConfirmSenderPayment && (
+                          <button
+                            onClick={handleConfirmSenderPayment}
+                            className="w-full bg-[#00C57E] text-white px-4 py-3 rounded-lg text-sm font-semibold hover:bg-[#00A869] active:bg-[#00995A] transition-all duration-150 shadow-card"
+                          >
+                            ✓ I Have Made The Payment
+                          </button>
+                        )}
+                        {canConfirmRiderPayment && (
+                          <button
+                            onClick={handleConfirmRiderPayment}
+                            className="w-full bg-[#00C57E] text-white px-4 py-3 rounded-lg text-sm font-semibold hover:bg-[#00A869] active:bg-[#00995A] transition-all duration-150 shadow-card"
+                          >
+                            ✓ I Have Received The Payment
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -931,15 +993,22 @@ export default function RequestDetailPage() {
               </div>
             )}
 
-            {/* Payment Confirmed Status */}
-            {request.paymentConfirmed && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-sm font-medium text-green-800">
-                  Payment confirmed {request.paymentConfirmedBy === user?.uid ? "by you" : ""}
-                </span>
+            {/* Payment Fully Confirmed Status */}
+            {paymentFullyConfirmed && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-semibold text-green-800">
+                    Payment Fully Confirmed
+                  </span>
+                </div>
+                <div className="text-xs text-green-700 space-y-1">
+                  <p>✓ Sender confirmed payment made</p>
+                  <p>✓ Rider confirmed payment received</p>
+                  <p className="font-medium mt-2">You can now complete the delivery with OTP.</p>
+                </div>
               </div>
             )}
 
@@ -949,9 +1018,9 @@ export default function RequestDetailPage() {
                   Enter Drop OTP:
                 </p>
                 <p className="text-xs text-gray-600 mb-3">
-                  {request.paymentConfirmed 
+                  {paymentFullyConfirmed 
                     ? "Enter the 4-digit OTP to complete delivery."
-                    : "⚠️ Payment must be confirmed before completing delivery."}
+                    : "⚠️ Payment must be confirmed by both sender and rider before completing delivery."}
                 </p>
                 <form
                   onSubmit={(e) => {

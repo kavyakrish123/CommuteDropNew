@@ -433,11 +433,11 @@ export async function verifyDropOTP(
   const request = await getRequest(requestId);
   if (!request) return { success: false, error: "Request not found" };
 
-  // Check if payment is confirmed before allowing drop OTP verification
-  if (!request.paymentConfirmed) {
+  // Check if both payment confirmations are done before allowing drop OTP verification
+  if (!request.senderPaymentMade || !request.riderPaymentReceived) {
     return { 
       success: false, 
-      error: "Payment must be confirmed before completing delivery. Please confirm payment first." 
+      error: "Payment must be confirmed by both sender and rider before completing delivery. Please confirm payment first." 
     };
   }
 
@@ -454,8 +454,64 @@ export async function verifyDropOTP(
 }
 
 /**
- * Confirm payment for a delivery request
- * Can be confirmed by either sender or receiver
+ * Confirm payment made by sender
+ * Sender clicks "I have made the payment"
+ */
+export async function confirmSenderPayment(
+  requestId: string,
+  senderId: string
+): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+  
+  // Check if user is the sender
+  if (request.senderId !== senderId) {
+    throw new Error("Only the sender can confirm payment made");
+  }
+  
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, {
+    senderPaymentMade: true,
+    senderPaymentMadeAt: serverTimestamp(),
+    // For backward compatibility, also set paymentConfirmed if rider already confirmed
+    paymentConfirmed: request.riderPaymentReceived || false,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Confirm payment received by rider
+ * Rider clicks "I have received the payment"
+ */
+export async function confirmRiderPayment(
+  requestId: string,
+  riderId: string
+): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+  
+  // Check if user is the rider
+  if (request.commuterId !== riderId) {
+    throw new Error("Only the rider can confirm payment received");
+  }
+  
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, {
+    riderPaymentReceived: true,
+    riderPaymentReceivedAt: serverTimestamp(),
+    // For backward compatibility, also set paymentConfirmed if sender already confirmed
+    paymentConfirmed: request.senderPaymentMade || false,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * DEPRECATED: Use confirmSenderPayment or confirmRiderPayment instead
+ * Kept for backward compatibility
  */
 export async function confirmPayment(
   requestId: string,
@@ -471,13 +527,27 @@ export async function confirmPayment(
     throw new Error("Only sender or receiver can confirm payment");
   }
   
-  const docRef = doc(db, "requests", requestId);
-  await updateDoc(docRef, {
-    paymentConfirmed: true,
-    paymentConfirmedBy: userId,
-    paymentConfirmedAt: serverTimestamp(),
+  // Determine which confirmation to set based on user role
+  const isSender = request.senderId === userId;
+  const updateData: any = {
     updatedAt: serverTimestamp(),
-  });
+  };
+  
+  if (isSender) {
+    updateData.senderPaymentMade = true;
+    updateData.senderPaymentMadeAt = serverTimestamp();
+  } else {
+    updateData.riderPaymentReceived = true;
+    updateData.riderPaymentReceivedAt = serverTimestamp();
+  }
+  
+  // Set paymentConfirmed if both are done
+  const senderDone = isSender ? true : (request.senderPaymentMade || false);
+  const riderDone = !isSender ? true : (request.riderPaymentReceived || false);
+  updateData.paymentConfirmed = senderDone && riderDone;
+  
+  const docRef = doc(db, "requests", requestId);
+  await updateDoc(docRef, updateData);
 }
 
 /**

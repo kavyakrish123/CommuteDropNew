@@ -83,9 +83,13 @@ export interface DeliveryRequest {
   riderLng?: number | null; // Rider's current longitude
   lastLocationUpdate?: Timestamp | null; // Last time rider location was updated
   // Payment Status
-  paymentConfirmed?: boolean; // Whether payment has been confirmed
-  paymentConfirmedBy?: string | null; // User ID who confirmed payment (sender or receiver)
-  paymentConfirmedAt?: Timestamp | null; // When payment was confirmed
+  paymentConfirmed?: boolean; // DEPRECATED: Use senderPaymentMade and riderPaymentReceived instead
+  paymentConfirmedBy?: string | null; // DEPRECATED
+  paymentConfirmedAt?: Timestamp | null; // DEPRECATED
+  senderPaymentMade?: boolean; // Whether sender has confirmed they made the payment
+  senderPaymentMadeAt?: Timestamp | null; // When sender confirmed payment
+  riderPaymentReceived?: boolean; // Whether rider has confirmed they received the payment
+  riderPaymentReceivedAt?: Timestamp | null; // When rider confirmed payment received
   // Arrival Status
   arrivedAtPickup?: boolean; // Whether rider has arrived at pickup location
   arrivedAtDrop?: boolean; // Whether rider has arrived at drop location
