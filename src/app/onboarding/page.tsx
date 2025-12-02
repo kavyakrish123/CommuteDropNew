@@ -14,6 +14,7 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import Link from "next/link";
 import { CommuteType } from "@/lib/types";
+import { CameraCapture } from "@/components/ui/CameraCapture";
 
 
 export default function OnboardingPage() {
@@ -41,6 +42,12 @@ export default function OnboardingPage() {
   });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "profile" | "paynow") => {
+    // Only allow file upload for PayNow QR, not for profile image (selfie)
+    if (type === "profile") {
+      showToast("Please use the camera to take a selfie", "error");
+      return;
+    }
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -49,14 +56,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    if (type === "profile") {
-      setProfileImage(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImageUrl(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
+    if (type === "paynow") {
       setPayNowQR(file);
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -64,6 +64,28 @@ export default function OnboardingPage() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleSelfieCapture = (file: File) => {
+    if (!file || file.size === 0) {
+      // Clear the selfie
+      setProfileImage(null);
+      setProfileImageUrl(null);
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Image must be less than 5MB", "error");
+      return;
+    }
+
+    setProfileImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setProfileImageUrl(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+    showToast("Selfie captured successfully!", "success");
   };
 
   const uploadImage = async (file: File, path: string): Promise<string> => {
@@ -81,10 +103,10 @@ export default function OnboardingPage() {
         showToast("Please enter a valid name (at least 2 characters)", "error");
         return;
       }
-      if (!profileImage) {
-        showToast("Please upload a profile image", "error");
-        return;
-      }
+                  if (!profileImage) {
+                    showToast("Please take a selfie using the camera", "error");
+                    return;
+                  }
       setStep(2);
       return;
     }
@@ -193,26 +215,16 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
-                  Profile Image *
+                  Selfie (Required) *
                 </label>
-                <div className="space-y-3">
-                  {profileImageUrl && (
-                    <img
-                      src={profileImageUrl}
-                      alt="Profile preview"
-                      className="w-32 h-32 rounded-full object-cover border-2 border-gray-200"
-                    />
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, "profile")}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Upload a clear photo of yourself (max 5MB)
-                  </p>
-                </div>
+                <p className="text-xs text-gray-600 mb-3">
+                  Take a live selfie using your camera. Your face must be clearly visible. Stock photos or uploaded images are not allowed.
+                </p>
+                <CameraCapture
+                  onCapture={handleSelfieCapture}
+                  onError={(error) => showToast(error, "error")}
+                  previewUrl={profileImageUrl}
+                />
               </div>
 
               <button
@@ -224,7 +236,7 @@ export default function OnboardingPage() {
                     return;
                   }
                   if (!profileImage) {
-                    showToast("Please upload a profile image", "error");
+                    showToast("Please take a selfie using the camera", "error");
                     return;
                   }
                   setStep(2);
