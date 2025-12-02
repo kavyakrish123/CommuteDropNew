@@ -20,6 +20,8 @@ import {
   confirmRiderPayment,
   markArrivedAtPickup,
   markArrivedAtDrop,
+  extendPickupDeadline,
+  checkAndExpirePickupDeadline,
 } from "@/lib/firestore/requests";
 import { getUser } from "@/lib/firestore/users";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -47,6 +49,7 @@ import { getCurrentLocation } from "@/lib/utils/geolocation";
 import { LocationDisplay } from "@/components/ui/LocationDisplay";
 import { PayNowQRDisplay } from "@/components/ui/PayNowQRDisplay";
 import { ShareTracking } from "@/components/ui/ShareTracking";
+import { RiderRequestModal } from "@/components/ui/RiderRequestModal";
 
 export default function RequestDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -68,6 +71,7 @@ export default function RequestDetailPage() {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [hasRated, setHasRated] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
   // Chat temporarily disabled
   // const [showChat, setShowChat] = useState(false);
   const [otpType, setOtpType] = useState<"pickup" | "drop" | null>(null);
@@ -169,20 +173,38 @@ export default function RequestDetailPage() {
     }
   }, [request, user, requestId, showRatingModal]);
 
-  const handleRequest = async () => {
+  const handleRequestClick = () => {
+    setRequestModalOpen(true);
+  };
+
+  const handleRequestConfirm = async (message?: string) => {
     if (!user || !request) return;
 
-      if (!confirm("Help deliver this? The sender will review your profile before approval.")) {
+    try {
+      await requestToDeliver(requestId, user.uid, message);
+      showToast("Request sent! Waiting for sender approval.", "success");
+      setRequestModalOpen(false);
+      // Real-time listener will update automatically
+    } catch (error: any) {
+      console.error("Error requesting task:", error);
+      showToast(error.message || "Failed to request delivery", "error");
+      setRequestModalOpen(false);
+    }
+  };
+
+  const handleExtendPickupDeadline = async () => {
+    if (!user || !request) return;
+
+    if (!confirm("Extend pickup deadline by 30 minutes?")) {
       return;
     }
 
     try {
-      await requestToDeliver(requestId, user.uid);
-      showToast("Request sent! Waiting for sender approval.", "success");
-      // Real-time listener will update automatically
-    } catch (error) {
-      console.error("Error requesting task:", error);
-        showToast("Failed to request delivery", "error");
+      await extendPickupDeadline(requestId, user.uid);
+      showToast("Pickup deadline extended by 30 minutes", "success");
+    } catch (error: any) {
+      console.error("Error extending deadline:", error);
+      showToast(error.message || "Failed to extend deadline", "error");
     }
   };
 
@@ -591,6 +613,52 @@ export default function RequestDetailPage() {
             )}
           </div>
 
+          {/* Scheduled Delivery Info */}
+          {request.sendNow === false && request.scheduledFor && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h3 className="text-sm font-semibold text-orange-900">Scheduled Delivery</h3>
+              </div>
+              <p className="text-base font-medium text-orange-800">
+                📅 {request.scheduledFor.toDate().toLocaleString()}
+              </p>
+              <p className="text-xs text-orange-700 mt-1">
+                This delivery is scheduled for a specific time. Riders will know this is not for immediate pickup.
+              </p>
+            </div>
+          )}
+
+          {/* Pickup Deadline Timer (for approved requests) */}
+          {request.status === "approved" && request.pickupDeadline && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 className="text-sm font-semibold text-yellow-900">Pickup Deadline</h3>
+                </div>
+                {isSender && (
+                  <button
+                    onClick={handleExtendPickupDeadline}
+                    className="text-xs text-yellow-700 hover:text-yellow-800 font-medium underline"
+                  >
+                    Extend +30 min
+                  </button>
+                )}
+              </div>
+              <CountdownTimer expiresAt={request.pickupDeadline} />
+              <p className="text-xs text-yellow-700 mt-2">
+                {isCommuter 
+                  ? "You have 30 minutes to pick up the item. If you don't, the request will become available again."
+                  : "Rider has 30 minutes to pick up. You can extend the deadline if needed."}
+              </p>
+            </div>
+          )}
+
           {/* Tip */}
           {request.priceOffered && (
             <div>
@@ -662,14 +730,24 @@ export default function RequestDetailPage() {
                   </button>
                 )}
               </div>
-              {requestedRiders.map(({ rider, uid }) => (
-                <RiderProfileCard
-                  key={uid}
-                  rider={rider}
-                  onApprove={() => handleApprove(uid)}
-                  onReject={() => handleReject(uid)}
-                />
-              ))}
+              {requestedRiders.map(({ rider, uid }) => {
+                const riderMessage = request.riderRequestMessages?.[uid];
+                return (
+                  <div key={uid} className="space-y-2">
+                    <RiderProfileCard
+                      rider={rider}
+                      onApprove={() => handleApprove(uid)}
+                      onReject={() => handleReject(uid)}
+                    />
+                    {riderMessage && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 ml-4">
+                        <p className="text-xs font-medium text-blue-900 mb-1">Message from {rider.name}:</p>
+                        <p className="text-sm text-blue-800 italic">"{riderMessage}"</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -679,7 +757,7 @@ export default function RequestDetailPage() {
           <div className="space-y-3 pt-4 border-t border-gray-200">
             {canRequest && (
               <button
-                onClick={handleRequest}
+                onClick={handleRequestClick}
                 className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700"
               >
                 Request to Deliver
@@ -1104,6 +1182,12 @@ export default function RequestDetailPage() {
 
       <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+      <RiderRequestModal
+        isOpen={requestModalOpen}
+        onClose={() => setRequestModalOpen(false)}
+        onConfirm={handleRequestConfirm}
+        requestDescription={request?.itemDescription}
+      />
     </div>
   );
 }

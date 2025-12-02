@@ -67,6 +67,18 @@ export const createRequestSchema = z.object({
     .positive("Tip must be positive")
     .optional()
     .nullable(),
+  sendNow: z.boolean().default(true),
+  scheduledFor: z
+    .date()
+    .optional()
+    .nullable()
+    .refine(
+      (date) => {
+        if (!date) return true; // Optional
+        return date > new Date(); // Must be in the future
+      },
+      { message: "Scheduled time must be in the future" }
+    ),
 });
 
 export const otpVerificationSchema = z.object({

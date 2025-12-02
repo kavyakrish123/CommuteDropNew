@@ -103,6 +103,17 @@ export function RequestCard({
           )}
         </div>
 
+        {/* Scheduled Delivery Info */}
+        {request.sendNow === false && request.scheduledFor && (
+          <div className="flex-shrink-0 pt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-500 font-medium mb-0.5">SCHEDULED</p>
+            <p className="text-sm font-semibold text-orange-600">
+              📅 {format(request.scheduledFor.toDate(), "MMM d, yyyy 'at' h:mm a")}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">This is a scheduled delivery</p>
+          </div>
+        )}
+
         {/* Tip */}
         {request.priceOffered && (
           <div className="flex-shrink-0 pt-2 border-t border-gray-100">

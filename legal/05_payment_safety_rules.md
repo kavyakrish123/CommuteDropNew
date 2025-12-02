@@ -89,3 +89,4 @@ By using this Platform, you acknowledge that:
 **These payment rules are fundamental to using this Platform. The Platform is a connector only and does not participate in financial transactions.**
 
 
+

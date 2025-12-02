@@ -173,3 +173,4 @@ After building the APK:
 - [Next.js Static Export](https://nextjs.org/docs/app/building-your-application/deploying/static-exports)
 
 
+

@@ -33,11 +33,12 @@ import { EducationBanner } from "@/components/ui/EducationBanner";
 import { LifetimeEarnings } from "@/components/ui/LifetimeEarnings";
 import { InstallAppEducation } from "@/components/ui/InstallAppEducation";
 import { ShareApp } from "@/components/ui/ShareApp";
+import { RiderRequestModal } from "@/components/ui/RiderRequestModal";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"my-requests" | "my-tasks" | "available">("my-requests");
+  const [activeTab, setActiveTab] = useState<"my-requests" | "my-tasks" | "available">("available");
   const [myRequests, setMyRequests] = useState<DeliveryRequest[]>([]);
   const [myActiveTasks, setMyActiveTasks] = useState<DeliveryRequest[]>([]);
   const [myRequestedTasks, setMyRequestedTasks] = useState<DeliveryRequest[]>([]); // Tasks where rider has requested
@@ -50,6 +51,8 @@ export default function DashboardPage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const { toasts, showToast, removeToast } = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -192,27 +195,34 @@ export default function DashboardPage() {
   }, [activeTab, user, userLocation]);
 
 
-  const handleRequest = async (requestId: string) => {
-    if (!user) return;
+  const handleRequestClick = (requestId: string) => {
+    setSelectedRequestId(requestId);
+    setRequestModalOpen(true);
+  };
+
+  const handleRequestConfirm = async (message?: string) => {
+    if (!user || !selectedRequestId) return;
 
     try {
       // Check eligibility
-        const eligibility = await canRiderRequestTask(user.uid);
-        if (!eligibility.canRequest) {
-          showToast(eligibility.reason || "Cannot help with this right now", "error");
-          return;
-        }
-
-      if (!confirm("Help deliver this? The sender will review your profile before approval.")) {
+      const eligibility = await canRiderRequestTask(user.uid);
+      if (!eligibility.canRequest) {
+        showToast(eligibility.reason || "Cannot help with this right now", "error");
+        setRequestModalOpen(false);
+        setSelectedRequestId(null);
         return;
       }
 
-      await requestToDeliver(requestId, user.uid);
+      await requestToDeliver(selectedRequestId, user.uid, message);
       showToast("Request sent! Waiting for sender approval.", "success");
+      setRequestModalOpen(false);
+      setSelectedRequestId(null);
       // Real-time listener will update automatically
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error requesting task:", error);
-        showToast("Failed to request delivery", "error");
+      showToast(error.message || "Failed to request delivery", "error");
+      setRequestModalOpen(false);
+      setSelectedRequestId(null);
     }
   };
 
@@ -585,7 +595,7 @@ export default function DashboardPage() {
                         key={request.id}
                         request={request}
                         showActions
-                        onAccept={() => request.id && handleRequest(request.id)}
+                        onAccept={() => request.id && handleRequestClick(request.id)}
                         currentUserId={user.uid}
                       />
                     ) : null
@@ -609,6 +619,15 @@ export default function DashboardPage() {
 
       <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+      <RiderRequestModal
+        isOpen={requestModalOpen}
+        onClose={() => {
+          setRequestModalOpen(false);
+          setSelectedRequestId(null);
+        }}
+        onConfirm={handleRequestConfirm}
+        requestDescription={availableRequests.find(r => r.id === selectedRequestId)?.itemDescription}
+      />
     </div>
   );
 }

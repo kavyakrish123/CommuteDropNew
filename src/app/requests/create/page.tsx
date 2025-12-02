@@ -52,6 +52,8 @@ export default function CreateRequestPage() {
       priceOffered: null,
       pickupDetails: "",
       dropDetails: "",
+      sendNow: true,
+      scheduledFor: null,
     },
   });
 
@@ -229,6 +231,8 @@ export default function CreateRequestPage() {
         pickupLng,
         dropLat,
         dropLng,
+        sendNow: data.sendNow ?? true,
+        scheduledFor: data.sendNow === false ? data.scheduledFor || null : null,
       });
 
       showToast("Request created successfully!", "success");
@@ -569,9 +573,76 @@ export default function CreateRequestPage() {
             </>
           )}
 
-          {/* Step 4: Pricing & Review */}
+          {/* Step 4: Scheduling & Pricing */}
           {step === 4 && (
             <>
+              {/* Scheduling Options */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  When to Send?
+                </label>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-[#00C57E] transition-colors">
+                    <input
+                      type="radio"
+                      {...form.register("sendNow")}
+                      value="true"
+                      checked={form.watch("sendNow") === true}
+                      onChange={() => form.setValue("sendNow", true)}
+                      className="w-5 h-5 text-[#00C57E] focus:ring-[#00C57E]"
+                    />
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">Send Now</p>
+                      <p className="text-sm text-gray-600">Riders can pick up immediately</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-[#00C57E] transition-colors">
+                    <input
+                      type="radio"
+                      {...form.register("sendNow")}
+                      value="false"
+                      checked={form.watch("sendNow") === false}
+                      onChange={() => form.setValue("sendNow", false)}
+                      className="w-5 h-5 text-[#00C57E] focus:ring-[#00C57E]"
+                    />
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">Schedule for Later</p>
+                      <p className="text-sm text-gray-600">Riders will know this is for a specific time</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Scheduled Date/Time */}
+              {form.watch("sendNow") === false && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Scheduled Date & Time *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    min={new Date().toISOString().slice(0, 16)}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        form.setValue("scheduledFor", new Date(e.target.value));
+                      } else {
+                        form.setValue("scheduledFor", null);
+                      }
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black font-bold"
+                    style={{ color: "#000000", fontWeight: 700 }}
+                  />
+                  {form.formState.errors.scheduledFor && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {form.formState.errors.scheduledFor.message}
+                    </p>
+                  )}
+                  <p className="mt-1 text-xs text-gray-500">
+                    Select when you need this delivered
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tip (Optional)
@@ -611,6 +682,9 @@ export default function CreateRequestPage() {
                   </p>
                   <p>
                     <strong>Drop:</strong> {form.watch("dropPincode")}
+                  </p>
+                  <p>
+                    <strong>Timing:</strong> {form.watch("sendNow") ? "Send Now" : form.watch("scheduledFor") ? `Scheduled for ${form.watch("scheduledFor")?.toLocaleString()}` : "Not set"}
                   </p>
                   {form.watch("priceOffered") && (
                     <p>

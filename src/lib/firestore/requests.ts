@@ -33,6 +33,8 @@ export async function createRequest(
     pickupLng?: number | null;
     dropLat?: number | null;
     dropLng?: number | null;
+    sendNow?: boolean;
+    scheduledFor?: Date | null;
   }
 ): Promise<string> {
   const otpPickup = generateOTP();
@@ -46,6 +48,8 @@ export async function createRequest(
     senderId,
     commuterId: null,
     ...data,
+    sendNow: data.sendNow ?? true,
+    scheduledFor: data.scheduledFor ? Timestamp.fromDate(data.scheduledFor) : null,
     status: "created",
     otpPickup,
     otpDrop,
@@ -110,6 +114,9 @@ export async function getAvailableRequests(
           } as DeliveryRequest)
       )
       .filter((req) => {
+        // Scheduled deliveries are visible to riders so they can plan ahead
+        // No filtering needed - riders will see the scheduled time and decide
+        
         // Filter out expired requests (older than 1 day)
         if (req.createdAt) {
           const createdDate = req.createdAt.toDate();
@@ -166,7 +173,8 @@ export async function getAvailableRequests(
 
 export async function requestToDeliver(
   requestId: string,
-  commuterId: string
+  commuterId: string,
+  message?: string
 ): Promise<void> {
   const request = await getRequest(requestId);
   if (!request) {
@@ -188,9 +196,15 @@ export async function requestToDeliver(
   
   // Add to queue and set status to requested if first request
   const updatedRiders = [...requestedRiders, commuterId];
+  const riderMessages = request.riderRequestMessages || {};
+  if (message && message.trim()) {
+    riderMessages[commuterId] = message.trim();
+  }
+  
   await updateDoc(docRef, {
     requestedRiders: updatedRiders,
     requestedBy: updatedRiders[0], // Keep for backward compatibility
+    riderRequestMessages: riderMessages,
     status: "requested",
     updatedAt: serverTimestamp(),
   });
@@ -212,14 +226,90 @@ export async function approveRiderRequest(
 
   const docRef = doc(db, "requests", requestId);
   
+  // Set pickup deadline to 30 minutes from now
+  const pickupDeadline = new Date();
+  pickupDeadline.setMinutes(pickupDeadline.getMinutes() + 30);
+  
   // Approve the selected rider and clear the queue
   await updateDoc(docRef, {
     commuterId: riderId,
     requestedRiders: [],
     requestedBy: null, // Clear for backward compatibility
     status: "approved",
+    pickupDeadline: Timestamp.fromDate(pickupDeadline),
+    pickupDeadlineExtended: false,
     updatedAt: serverTimestamp(),
   });
+}
+
+/**
+ * Extend pickup deadline by 30 minutes
+ */
+export async function extendPickupDeadline(
+  requestId: string,
+  senderId: string
+): Promise<void> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+
+  if (request.senderId !== senderId) {
+    throw new Error("Only the sender can extend the pickup deadline");
+  }
+
+  if (!request.pickupDeadline) {
+    throw new Error("No pickup deadline to extend");
+  }
+
+  const docRef = doc(db, "requests", requestId);
+  const currentDeadline = request.pickupDeadline.toDate();
+  const newDeadline = new Date(currentDeadline);
+  newDeadline.setMinutes(newDeadline.getMinutes() + 30);
+  
+  await updateDoc(docRef, {
+    pickupDeadline: Timestamp.fromDate(newDeadline),
+    pickupDeadlineExtended: true,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Check and auto-expire pickup deadline if passed
+ * This should be called periodically or when viewing requests
+ */
+export async function checkAndExpirePickupDeadline(
+  requestId: string
+): Promise<boolean> {
+  const request = await getRequest(requestId);
+  if (!request) {
+    return false;
+  }
+
+  // Only check if status is approved and deadline exists
+  if (request.status !== "approved" || !request.pickupDeadline) {
+    return false;
+  }
+
+  const deadline = request.pickupDeadline.toDate();
+  const now = new Date();
+
+  // If deadline has passed and rider hasn't picked up yet
+  if (now > deadline && request.status === "approved") {
+    const docRef = doc(db, "requests", requestId);
+    await updateDoc(docRef, {
+      commuterId: null,
+      status: "created",
+      pickupDeadline: null,
+      pickupDeadlineExtended: false,
+      requestedRiders: [],
+      requestedBy: null,
+      updatedAt: serverTimestamp(),
+    });
+    return true; // Deadline expired and request made available again
+  }
+
+  return false;
 }
 
 export async function rejectRiderRequest(

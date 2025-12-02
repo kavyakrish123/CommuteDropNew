@@ -95,5 +95,13 @@ export interface DeliveryRequest {
   arrivedAtDrop?: boolean; // Whether rider has arrived at drop location
   arrivedAtPickupAt?: Timestamp | null; // When rider arrived at pickup
   arrivedAtDropAt?: Timestamp | null; // When rider arrived at drop
+  // Pickup Deadline
+  pickupDeadline?: Timestamp | null; // Deadline for rider to pickup (30 min after approval)
+  pickupDeadlineExtended?: boolean; // Whether sender has extended the deadline
+  // Scheduling
+  sendNow?: boolean; // true = send now, false = scheduled for later
+  scheduledFor?: Timestamp | null; // When delivery is scheduled (if sendNow is false)
+  // Rider Request Messages
+  riderRequestMessages?: Record<string, string>; // Map of riderId -> message when they request
 }
 

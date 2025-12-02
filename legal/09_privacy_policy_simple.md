@@ -114,3 +114,4 @@ By using this Platform, you consent to:
 **This is a simple Privacy Policy for our beta community platform. We collect minimal data and use it only for Platform functionality. Your privacy is important to us.**
 
 
+
